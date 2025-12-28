@@ -9,12 +9,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AdminDocuments } from "@/components/AdminDocuments";
 import { AdminSettings } from "@/components/AdminSettings";
-import { Settings, Users, Briefcase, Plus, Trash2, Edit2, MessageSquare } from "lucide-react";
+import { Settings, Users, Briefcase, Plus, Trash2, Edit2, MessageSquare, DollarSign, PieChart, TrendingUp, AlertCircle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Progress } from "@/components/ui/progress";
 
 export function AdminPage() {
   const { user, logout, orders, writers, assignWriter, releaseEscrow, messages, addWriter, updateWriter, deleteWriter } = useApp();
@@ -28,6 +29,11 @@ export function AdminPage() {
   
   const order = selectedOrder ? orders.find(o => o.id === selectedOrder) : null;
   const orderMessages = order ? messages.filter(m => m.orderId === order.id).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()) : [];
+
+  // Financial Calculations
+  const totalEscrowHeld = orders.filter(o => o.escrowStatus === "held").reduce((acc, curr) => acc + curr.total, 0);
+  const totalReleased = orders.filter(o => o.escrowStatus === "released").reduce((acc, curr) => acc + curr.total, 0);
+  const totalRefunded = orders.filter(o => o.escrowStatus === "refunded").reduce((acc, curr) => acc + curr.total, 0);
 
   useEffect(() => {
     if (!user || user.role !== "admin") {
@@ -158,6 +164,9 @@ export function AdminPage() {
           <TabsTrigger value="writers" className="flex items-center gap-2">
             <Users className="w-4 h-4" /> Writers
           </TabsTrigger>
+          <TabsTrigger value="financials" className="flex items-center gap-2">
+            <DollarSign className="w-4 h-4" /> Financials & Escrow
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="orders">
@@ -268,6 +277,87 @@ export function AdminPage() {
                       </TableCell>
                     </TableRow>
                   ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="financials">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <Card className="bg-yellow-50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-900/30">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-yellow-800 dark:text-yellow-200 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4" /> Funds in Escrow
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-yellow-900 dark:text-yellow-100">${totalEscrowHeld}</div>
+                <p className="text-xs text-yellow-700/80 mt-1">Held until order completion</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-900/30">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-green-800 dark:text-green-200 flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4" /> Released Earnings
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-green-900 dark:text-green-100">${totalReleased}</div>
+                <p className="text-xs text-green-700/80 mt-1">Paid out to writers</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <PieChart className="w-4 h-4" /> Platform Fees
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold">${(totalReleased * 0.2).toFixed(2)}</div>
+                <p className="text-xs text-muted-foreground mt-1">Est. 20% platform commission</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Escrow Ledger</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Order ID</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Writer</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {orders.map((order) => {
+                    const assignedWriter = writers.find(w => w.id === order.assignedWriterId);
+                    return (
+                      <TableRow key={order.id}>
+                        <TableCell className="font-medium">{order.id}</TableCell>
+                        <TableCell>${order.total}</TableCell>
+                        <TableCell>{assignedWriter?.name || "Unassigned"}</TableCell>
+                        <TableCell>
+                          <Badge variant={order.escrowStatus === "released" ? "outline" : "secondary"} className={order.escrowStatus === "held" ? "bg-yellow-100 text-yellow-800" : "bg-green-100 text-green-800"}>
+                            {order.escrowStatus === "held" ? "Held in Escrow" : "Released"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {order.escrowStatus === "held" && (
+                            <Button size="sm" variant="outline" onClick={() => handleReleaseEscrow(order.id)}>
+                              Release Payment
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </CardContent>

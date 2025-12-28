@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
-import { FileText, MessageSquare, CheckCircle, DollarSign, LogOut, Send, User } from "lucide-react";
+import { FileText, MessageSquare, CheckCircle, DollarSign, LogOut, Send, User, Upload, History } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
@@ -239,10 +239,33 @@ export function WriterPage() {
                 <TabsContent value="documents" className="flex-1 mt-2">
                   <Card className="h-full shadow-md border-none">
                     <CardContent className="p-6">
-                      <div className="text-center text-muted-foreground py-10">
-                        <FileText className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                        <h3 className="text-lg font-medium text-foreground mb-2">No documents yet</h3>
-                        <p className="max-w-sm mx-auto">The client hasn't uploaded any documents for this order yet.</p>
+                      <div className="space-y-6">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-lg font-medium">Uploaded Documents</h3>
+                          <Button size="sm">
+                            <Upload className="w-4 h-4 mr-2" /> Upload New Version
+                          </Button>
+                        </div>
+                        
+                        {/* Revisions / Versions List */}
+                        <div className="space-y-3">
+                          <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Version History</h4>
+                          <div className="flex items-center justify-between p-3 border rounded-lg bg-card">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded bg-primary/10 flex items-center justify-center text-primary">
+                                <FileText className="w-5 h-5" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium">Resume_Draft_v1.pdf</p>
+                                <p className="text-xs text-muted-foreground">Uploaded 2 hours ago</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline">Draft</Badge>
+                              <Button variant="ghost" size="icon"><History className="w-4 h-4" /></Button>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>

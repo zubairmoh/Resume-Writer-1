@@ -42,6 +42,14 @@ interface Message {
   timestamp: string;
 }
 
+interface RevisionRequest {
+  id: string;
+  orderId: string;
+  comments: string;
+  status: "pending" | "resolved";
+  timestamp: string;
+}
+
 interface Notification {
   id: string;
   message: string;
@@ -88,6 +96,9 @@ interface AppContextType {
   releaseEscrow: (orderId: string) => void;
   messages: Message[];
   addMessage: (msg: Omit<Message, "id" | "timestamp">) => void;
+  revisions: RevisionRequest[];
+  addRevisionRequest: (req: Omit<RevisionRequest, "id" | "status" | "timestamp">) => void;
+  resolveRevision: (id: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -98,6 +109,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     { id: "WR-001", name: "Sarah Jenkins", email: "sarah@proresumes.ca", activeOrders: 2, rating: 4.9, specialties: ["Tech", "Executive"] },
     { id: "WR-002", name: "Michael Chen", email: "michael@proresumes.ca", activeOrders: 1, rating: 4.8, specialties: ["Finance", "Entry Level"] },
   ]);
+
+  const [revisions, setRevisions] = useState<RevisionRequest[]>([]);
 
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -263,6 +276,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setMessages(prev => [...prev, newMessage]);
   };
 
+  const addRevisionRequest = (req: Omit<RevisionRequest, "id" | "status" | "timestamp">) => {
+    const newRevision: RevisionRequest = {
+      ...req,
+      id: `REV-${Date.now()}`,
+      status: "pending",
+      timestamp: new Date().toISOString(),
+    };
+    setRevisions(prev => [...prev, newRevision]);
+  };
+
+  const resolveRevision = (id: string) => {
+    setRevisions(prev => prev.map(r => r.id === id ? { ...r, status: "resolved" } : r));
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -287,6 +314,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         releaseEscrow,
         messages,
         addMessage,
+        revisions,
+        addRevisionRequest,
+        resolveRevision,
       }}
     >
       {children}

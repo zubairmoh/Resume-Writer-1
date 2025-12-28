@@ -105,6 +105,37 @@ export function AdminSettings() {
         </CardContent>
       </Card>
 
+      {/* Security & Spam */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Security & Spam Filtering</CardTitle>
+          <CardDescription>Protect your platform from abuse</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex items-center justify-between p-3 rounded-lg border">
+            <div>
+              <p className="font-medium text-sm">Keyword Filtering</p>
+              <p className="text-xs text-muted-foreground">Block messages with banned words</p>
+            </div>
+            <Button size="sm" variant="outline">Configure</Button>
+          </div>
+          <div className="flex items-center justify-between p-3 rounded-lg border">
+            <div>
+              <p className="font-medium text-sm">IP Rate Limiting</p>
+              <p className="text-xs text-muted-foreground">Prevent DOS attacks and spam</p>
+            </div>
+            <Button size="sm" variant="outline">Enabled</Button>
+          </div>
+          <div className="flex items-center justify-between p-3 rounded-lg border">
+            <div>
+              <p className="font-medium text-sm">reCAPTCHA v3</p>
+              <p className="text-xs text-muted-foreground">Invisible bot protection on forms</p>
+            </div>
+            <Button size="sm" variant="outline">Enabled</Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Advanced Features */}
       <Card>
         <CardHeader>

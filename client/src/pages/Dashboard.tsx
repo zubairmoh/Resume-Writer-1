@@ -6,21 +6,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { FileText, Send, User, Upload, Edit, MessageSquare } from "lucide-react";
+import { FileText, Send, User, Upload, MessageSquare, AlertTriangle, FileInput, History } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { RevisionTimer } from "@/components/RevisionTimer";
 import { OrderHistory } from "@/components/OrderHistory";
 import { NotificationBell } from "@/components/NotificationBell";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
+import { Textarea } from "@/components/ui/textarea";
 
 export function DashboardPage() {
-  const { user, logout, orders, messages, addMessage } = useApp();
+  const { user, logout, orders, messages, addMessage, addRevisionRequest } = useApp();
   const navigate = useNavigate();
   const [messageInput, setMessageInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isRevisionOpen, setIsRevisionOpen] = useState(false);
+  const [revisionComments, setRevisionComments] = useState("");
   const [profileData, setProfileData] = useState({ name: "John Doe", email: "" });
 
   const currentOrder = orders[0];
@@ -63,6 +66,25 @@ export function DashboardPage() {
       description: "Your changes have been saved successfully.",
     });
     setIsProfileOpen(false);
+  };
+
+  const handleSubmitRevision = () => {
+    if (!revisionComments.trim()) {
+      toast({ title: "Error", description: "Please enter your revision comments.", variant: "destructive" });
+      return;
+    }
+    
+    addRevisionRequest({
+      orderId: currentOrder.id,
+      comments: revisionComments,
+    });
+    
+    toast({
+      title: "Revision Requested",
+      description: "Your writer has been notified.",
+    });
+    setIsRevisionOpen(false);
+    setRevisionComments("");
   };
 
   return (
@@ -156,6 +178,25 @@ export function DashboardPage() {
                           <div className="bg-primary h-full rounded-full w-[33%] transition-all duration-1000" />
                         </div>
                         <p className="text-xs text-muted-foreground text-right mt-1">Drafting in progress...</p>
+                      </div>
+
+                      {/* File Versions / Revisions */}
+                      <div className="bg-secondary/20 rounded-lg p-4 border space-y-3">
+                         <h4 className="text-sm font-semibold flex items-center gap-2">
+                           <History className="w-4 h-4" /> Document History
+                         </h4>
+                         <div className="flex items-center justify-between text-sm p-2 bg-background rounded border">
+                           <div className="flex items-center gap-2">
+                             <FileText className="w-4 h-4 text-muted-foreground" />
+                             <span>Resume_Draft_v1.pdf</span>
+                           </div>
+                           <Badge variant="outline" className="text-[10px]">Current Draft</Badge>
+                         </div>
+                         <div className="flex justify-end">
+                           <Button size="sm" variant="outline" onClick={() => setIsRevisionOpen(true)}>
+                             Request Revision
+                           </Button>
+                         </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -280,6 +321,30 @@ export function DashboardPage() {
               <Button type="submit">Save Changes</Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Request Revision Modal */}
+      <Dialog open={isRevisionOpen} onOpenChange={setIsRevisionOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Request Revision</DialogTitle>
+            <DialogDescription>
+              Please explain what changes you would like to see.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+             <Textarea 
+                placeholder="e.g., Can we highlight my leadership experience more in the summary?"
+                value={revisionComments}
+                onChange={(e) => setRevisionComments(e.target.value)}
+                className="min-h-[100px]"
+             />
+          </div>
+          <DialogFooter>
+             <Button variant="outline" onClick={() => setIsRevisionOpen(false)}>Cancel</Button>
+             <Button onClick={handleSubmitRevision}>Submit Request</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
