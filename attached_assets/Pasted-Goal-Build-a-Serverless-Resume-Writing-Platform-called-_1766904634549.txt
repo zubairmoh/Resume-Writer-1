@@ -1,0 +1,77 @@
+Goal: Build a "Serverless" Resume Writing Platform called ResumePro that can be hosted on static shared hosting.
+
+Tech Stack:
+
+Frontend: React + Vite (TypeScript).
+
+UI Library: Shadcn UI + Tailwind CSS.
+
+Backend/Auth: Supabase (Use the Supabase JS Client).
+
+PDF Processing: pdfjs-dist (Client-side only).
+
+Project Structure & Features:
+
+1. The Landing Page (The Funnel):
+
+Hero: Strong value prop ("Beat the Bots. Get Hired.").
+
+ATS Scanner Component (Critical):
+
+Allow PDF Drag & Drop.
+
+Action: Parse the PDF text in the browser using pdfjs-dist.
+
+Logic: Calculate a score (0-100) based on the presence of keywords (Experience, Skills, Education) and contact info (Email, Phone).
+
+The Gate: If the score is calculated, blur the result and require an Email Signup to reveal it.
+
+Storage: Save the captured email to the leads table in Supabase.
+
+2. The Checkout (Pricing & Add-ons):
+
+Tiers: Entry ($99), Professional ($199), Executive ($299).
+
+Add-Ons (Toggle Switches):
+
+"Cover Letter Writing" (+$50)
+
+"LinkedIn Profile Optimization" (+$75)
+
+Logic: Update the "Total Price" dynamically as toggles are switched.
+
+Checkout: A "Pay with Stripe" button (Mock the interaction for now: Create an order in Supabase with status 'pending').
+
+3. Client Dashboard (Protected Route):
+
+Requirement: Only accessible if logged in via Supabase Auth.
+
+Tabs:
+
+"My Order": Shows current status (e.g., "Writer is drafting...").
+
+"Uploads": User can upload their current resume and job descriptions here.
+
+"Chat": A real-time chat interface connected to the messages table in Supabase (using Supabase Realtime).
+
+4. Admin Dashboard (For Me):
+
+A view to see all Orders.
+
+Ability to click an order, view the client's files, and reply to their chat messages.
+
+Database Schema (Supabase):
+
+profiles: id, email, role (client/admin).
+
+orders: id, user_id, package_tier, has_cover_letter (bool), has_linkedin (bool), status, total_price.
+
+messages: id, order_id, sender_id, content, created_at.
+
+Deployment Constraint:
+
+This app will be hosted on Hostinger Shared Hosting.
+
+Ensure all routing is handled via react-router-dom.
+
+Do not rely on any Node.js runtime features; everything must work in the browser.
