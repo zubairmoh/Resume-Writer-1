@@ -41,6 +41,19 @@ export function AuthPage() {
     }, 1500);
   };
 
+  const handleQuickLogin = (role: "admin" | "writer" | "client") => {
+    if (role === "admin") {
+      login("admin@resumepro.com", "admin");
+      navigate("/admin");
+    } else if (role === "writer") {
+      login("writer@proresumes.ca", "writer");
+      navigate("/writer");
+    } else {
+      login("user@example.com", "client");
+      navigate("/dashboard");
+    }
+  };
+
   if (step === "verify") {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
@@ -147,6 +160,27 @@ export function AuthPage() {
                   <Button className="w-full" type="submit" disabled={isLoading}>
                     {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Sign In"}
                   </Button>
+                  
+                  <div className="relative w-full py-2">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">Quick Login (Demo)</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 w-full">
+                    <Button type="button" variant="outline" size="sm" onClick={() => handleQuickLogin("admin")}>
+                      Admin
+                    </Button>
+                    <Button type="button" variant="outline" size="sm" onClick={() => handleQuickLogin("writer")}>
+                      Writer
+                    </Button>
+                    <Button type="button" variant="outline" size="sm" onClick={() => handleQuickLogin("client")}>
+                      Client
+                    </Button>
+                  </div>
                 </form>
               </TabsContent>
 
