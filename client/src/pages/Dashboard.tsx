@@ -16,6 +16,8 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 
+import { ResumePreview } from "@/components/ResumePreview";
+
 // Add this component locally
 function TimelineItem({ title, date, status, isLast }: { title: string, date: string, status: 'completed' | 'current' | 'upcoming', isLast?: boolean }) {
   return (
@@ -176,8 +178,9 @@ export function DashboardPage() {
 
         <div className="flex-1 p-6 max-w-5xl mx-auto w-full">
           <Tabs defaultValue="order" className="h-full flex flex-col">
-            <TabsList className="w-full max-w-2xl grid grid-cols-4 mb-6 mx-auto md:mx-0">
+            <TabsList className="w-full max-w-2xl grid grid-cols-5 mb-6 mx-auto md:mx-0">
               <TabsTrigger value="order">My Order</TabsTrigger>
+              <TabsTrigger value="preview">Live Preview</TabsTrigger>
               <TabsTrigger value="targeting">Targeting</TabsTrigger>
               <TabsTrigger value="tracker">Job Tracker</TabsTrigger>
               <TabsTrigger value="chat">Chat</TabsTrigger>
@@ -321,6 +324,10 @@ export function DashboardPage() {
                   </Card>
                 </div>
               </div>
+            </TabsContent>
+
+            <TabsContent value="preview" className="flex-1 h-[800px]">
+               <ResumePreview />
             </TabsContent>
 
             <TabsContent value="targeting" className="flex-1">

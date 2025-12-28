@@ -3,6 +3,7 @@ import { Hero } from "@/components/home/Hero";
 import { ATSScanner } from "@/components/home/ATSScanner";
 import { Pricing } from "@/components/home/Pricing";
 import { ResumeComparison } from "@/components/home/ResumeComparison";
+import { TemplateGallery } from "@/components/home/TemplateGallery";
 import { Card, CardContent } from "@/components/ui/card";
 import { Star } from "lucide-react";
 
@@ -51,6 +52,7 @@ export function LandingPage() {
         <Hero />
         <TrustSection />
         <ResumeComparison />
+        <TemplateGallery />
         <ATSScanner />
         <Pricing />
       </main>
