@@ -2,11 +2,11 @@ import { useState, useEffect, useRef } from "react";
 import { useApp } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { FileText, Send, User, Upload, MessageSquare, AlertTriangle, FileInput, History, CheckCircle2, Circle, Clock } from "lucide-react";
+import { FileText, Send, User, Upload, MessageSquare, AlertTriangle, FileInput, History, CheckCircle2, Circle, Clock, Briefcase, Plus, ExternalLink, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { RevisionTimer } from "@/components/RevisionTimer";
 import { OrderHistory } from "@/components/OrderHistory";
@@ -48,6 +48,12 @@ export function DashboardPage() {
   const [isRevisionOpen, setIsRevisionOpen] = useState(false);
   const [revisionComments, setRevisionComments] = useState("");
   const [profileData, setProfileData] = useState({ name: "John Doe", email: "" });
+
+  const [targetJobs, setTargetJobs] = useState([
+    { id: 1, title: "Senior Software Engineer", company: "Shopify", url: "https://shopify.com/careers/..." },
+    { id: 2, title: "Full Stack Developer", company: "Wealthsimple", url: "" }
+  ]);
+  const [newJobUrl, setNewJobUrl] = useState("");
 
   const currentOrder = orders[0];
   const orderMessages = messages.filter(m => m.orderId === currentOrder?.id).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
@@ -110,6 +116,18 @@ export function DashboardPage() {
     setRevisionComments("");
   };
 
+  const handleAddTargetJob = () => {
+    if (!newJobUrl) return;
+    setTargetJobs([...targetJobs, { 
+      id: Date.now(), 
+      title: "New Role (Pending Review)", 
+      company: "Unknown", 
+      url: newJobUrl 
+    }]);
+    setNewJobUrl("");
+    toast({ title: "Job Added", description: "Your writer will review this target role." });
+  };
+
   return (
     <div className="min-h-screen flex bg-background">
       {/* Sidebar */}
@@ -158,10 +176,11 @@ export function DashboardPage() {
 
         <div className="flex-1 p-6 max-w-5xl mx-auto w-full">
           <Tabs defaultValue="order" className="h-full flex flex-col">
-            <TabsList className="w-full max-w-md grid grid-cols-3 mb-6 mx-auto md:mx-0">
+            <TabsList className="w-full max-w-2xl grid grid-cols-4 mb-6 mx-auto md:mx-0">
               <TabsTrigger value="order">My Order</TabsTrigger>
-              <TabsTrigger value="uploads">Uploads</TabsTrigger>
-              <TabsTrigger value="chat">Chat with Writer</TabsTrigger>
+              <TabsTrigger value="targeting">Targeting</TabsTrigger>
+              <TabsTrigger value="tracker">Job Tracker</TabsTrigger>
+              <TabsTrigger value="chat">Chat</TabsTrigger>
             </TabsList>
 
             <TabsContent value="order" className="flex-1 space-y-6">
@@ -304,19 +323,122 @@ export function DashboardPage() {
               </div>
             </TabsContent>
 
-            <TabsContent value="uploads" className="flex-1">
-               <Card className="h-[400px] flex flex-col items-center justify-center border-dashed bg-secondary/20">
-                 <div className="text-center space-y-4">
-                   <div className="w-16 h-16 bg-background rounded-full flex items-center justify-center mx-auto shadow-sm border">
-                     <Upload className="w-8 h-8 text-primary/80" />
+            <TabsContent value="targeting" className="flex-1">
+               <Card>
+                 <CardHeader>
+                   <CardTitle>Target Roles & Strategy</CardTitle>
+                   <CardDescription>
+                     Provide 2-3 job postings you are targeting. Your writer will tailor your keywords to match these specifically.
+                   </CardDescription>
+                 </CardHeader>
+                 <CardContent className="space-y-6">
+                   <div className="flex gap-2">
+                     <Input 
+                       placeholder="Paste LinkedIn or Company Job URL..." 
+                       value={newJobUrl}
+                       onChange={(e) => setNewJobUrl(e.target.value)}
+                     />
+                     <Button onClick={handleAddTargetJob}>
+                       <Plus className="w-4 h-4 mr-2" /> Add Job
+                     </Button>
                    </div>
-                   <h3 className="text-lg font-medium">Upload Job Descriptions</h3>
-                   <p className="text-muted-foreground max-w-xs mx-auto text-sm">
-                     Upload job descriptions you are targeting so we can optimize your resume keywords.
-                   </p>
-                   <Button>Select Files</Button>
-                 </div>
+
+                   <div className="space-y-3">
+                     {targetJobs.map((job) => (
+                       <div key={job.id} className="flex items-center justify-between p-4 border rounded-lg bg-card hover:bg-secondary/20 transition-colors">
+                         <div className="flex items-center gap-4">
+                           <div className="w-10 h-10 rounded bg-primary/10 flex items-center justify-center text-primary">
+                             <Briefcase className="w-5 h-5" />
+                           </div>
+                           <div>
+                             <p className="font-medium">{job.title}</p>
+                             <p className="text-sm text-muted-foreground">{job.company}</p>
+                           </div>
+                         </div>
+                         <div className="flex items-center gap-2">
+                           {job.url && (
+                             <a href={job.url} target="_blank" rel="noreferrer">
+                               <Button variant="ghost" size="icon"><ExternalLink className="w-4 h-4" /></Button>
+                             </a>
+                           )}
+                           <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600">
+                             <Trash2 className="w-4 h-4" />
+                           </Button>
+                         </div>
+                       </div>
+                     ))}
+                   </div>
+                   
+                   <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-lg border border-blue-100 dark:border-blue-900/30">
+                     <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
+                       <CheckCircle2 className="w-4 h-4" /> Why is this important?
+                     </h4>
+                     <p className="text-sm text-blue-800 dark:text-blue-200">
+                       Generic resumes get rejected. By analyzing these specific job descriptions, we can "keyword stuff" your resume ethically to pass the ATS (Applicant Tracking System) for these specific roles.
+                     </p>
+                   </div>
+                 </CardContent>
                </Card>
+            </TabsContent>
+
+            <TabsContent value="tracker" className="flex-1">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                   <div>
+                     <CardTitle>Job Application Tracker</CardTitle>
+                     <CardDescription>Keep track of your active applications.</CardDescription>
+                   </div>
+                   <Button size="sm"><Plus className="w-4 h-4 mr-2" /> Add Application</Button>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Applied Column */}
+                    <div className="bg-secondary/30 p-4 rounded-lg min-h-[400px]">
+                      <h4 className="font-medium mb-4 flex items-center justify-between">
+                        <span>Applied</span>
+                        <Badge variant="secondary">1</Badge>
+                      </h4>
+                      <div className="space-y-3">
+                         <Card className="p-3 shadow-sm cursor-grab active:cursor-grabbing">
+                           <div className="flex justify-between items-start mb-2">
+                             <span className="font-medium text-sm">Frontend Lead</span>
+                             <Badge variant="outline" className="text-[10px]">RBC</Badge>
+                           </div>
+                           <p className="text-xs text-muted-foreground">Applied 2 days ago</p>
+                         </Card>
+                      </div>
+                    </div>
+
+                    {/* Interview Column */}
+                    <div className="bg-secondary/30 p-4 rounded-lg min-h-[400px]">
+                      <h4 className="font-medium mb-4 flex items-center justify-between">
+                        <span>Interviewing</span>
+                        <Badge variant="default" className="bg-blue-500">1</Badge>
+                      </h4>
+                      <div className="space-y-3">
+                         <Card className="p-3 shadow-sm cursor-grab active:cursor-grabbing border-blue-200">
+                           <div className="flex justify-between items-start mb-2">
+                             <span className="font-medium text-sm">React Developer</span>
+                             <Badge variant="outline" className="text-[10px]">Telus</Badge>
+                           </div>
+                           <p className="text-xs text-muted-foreground">Interview tomorrow 2pm</p>
+                         </Card>
+                      </div>
+                    </div>
+
+                    {/* Offer Column */}
+                    <div className="bg-secondary/30 p-4 rounded-lg min-h-[400px]">
+                      <h4 className="font-medium mb-4 flex items-center justify-between">
+                        <span>Offer / Hired</span>
+                        <Badge variant="default" className="bg-green-500">0</Badge>
+                      </h4>
+                      <div className="flex items-center justify-center h-32 text-muted-foreground text-sm italic border-2 border-dashed rounded-lg">
+                        Drag success here!
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="chat" className="flex-1 h-[600px] min-h-[500px]">

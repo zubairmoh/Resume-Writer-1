@@ -2,6 +2,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Hero } from "@/components/home/Hero";
 import { ATSScanner } from "@/components/home/ATSScanner";
 import { Pricing } from "@/components/home/Pricing";
+import { ResumeComparison } from "@/components/home/ResumeComparison";
 import { Card, CardContent } from "@/components/ui/card";
 import { Star } from "lucide-react";
 
@@ -49,6 +50,7 @@ export function LandingPage() {
       <main>
         <Hero />
         <TrustSection />
+        <ResumeComparison />
         <ATSScanner />
         <Pricing />
       </main>
