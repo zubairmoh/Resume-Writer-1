@@ -1,22 +1,33 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AdminDocuments } from "@/components/AdminDocuments";
 import { AdminSettings } from "@/components/AdminSettings";
-import { Settings, Users, Briefcase } from "lucide-react";
+import { Settings, Users, Briefcase, Plus, Trash2, Edit2, MessageSquare } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export function AdminPage() {
-  const { user, logout, orders, writers, assignWriter, releaseEscrow } = useApp();
+  const { user, logout, orders, writers, assignWriter, releaseEscrow, messages, addWriter, updateWriter, deleteWriter } = useApp();
   const navigate = useNavigate();
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
+  
+  // Writer Management State
+  const [editingWriter, setEditingWriter] = useState<string | null>(null); // ID or null
+  const [isWriterModalOpen, setIsWriterModalOpen] = useState(false);
+  const [writerForm, setWriterForm] = useState({ name: "", email: "", specialties: "", rating: "5.0" });
+  
+  const order = selectedOrder ? orders.find(o => o.id === selectedOrder) : null;
+  const orderMessages = order ? messages.filter(m => m.orderId === order.id).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()) : [];
 
   useEffect(() => {
     if (!user || user.role !== "admin") {
@@ -27,8 +38,6 @@ export function AdminPage() {
   if (!user || user.role !== "admin") {
     return null;
   }
-
-  const order = selectedOrder ? orders.find(o => o.id === selectedOrder) : null;
 
   const handleAssignWriter = (writerId: string) => {
     if (selectedOrder) {
@@ -50,11 +59,65 @@ export function AdminPage() {
     }
   };
 
+  // Writer Management Handlers
+  const handleOpenWriterModal = (writerId?: string) => {
+    if (writerId) {
+      const writer = writers.find(w => w.id === writerId);
+      if (writer) {
+        setEditingWriter(writerId);
+        setWriterForm({
+          name: writer.name,
+          email: writer.email,
+          specialties: writer.specialties.join(", "),
+          rating: writer.rating.toString()
+        });
+      }
+    } else {
+      setEditingWriter(null);
+      setWriterForm({ name: "", email: "", specialties: "", rating: "5.0" });
+    }
+    setIsWriterModalOpen(true);
+  };
+
+  const handleSaveWriter = (e: React.FormEvent) => {
+    e.preventDefault();
+    const specialtiesArray = writerForm.specialties.split(",").map(s => s.trim()).filter(Boolean);
+    const ratingNum = parseFloat(writerForm.rating) || 5.0;
+
+    if (editingWriter) {
+      updateWriter(editingWriter, {
+        name: writerForm.name,
+        email: writerForm.email,
+        specialties: specialtiesArray,
+        rating: ratingNum
+      });
+      toast({ title: "Writer Updated", description: "Writer details saved successfully." });
+    } else {
+      addWriter({
+        id: `WR-${Date.now()}`,
+        activeOrders: 0,
+        name: writerForm.name,
+        email: writerForm.email,
+        specialties: specialtiesArray,
+        rating: ratingNum
+      });
+      toast({ title: "Writer Added", description: "New writer added to the team." });
+    }
+    setIsWriterModalOpen(false);
+  };
+
+  const handleDeleteWriter = (id: string) => {
+    if (confirm("Are you sure you want to delete this writer?")) {
+      deleteWriter(id);
+      toast({ title: "Writer Deleted", description: "Writer removed from the system." });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background p-8">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold font-display">Admin Dashboard</h1>
+          <h1 className="text-3xl font-bold font-display text-primary">Admin Dashboard</h1>
           <p className="text-muted-foreground">Manage client orders and assignments.</p>
         </div>
         <Button variant="outline" onClick={() => { logout(); navigate("/"); }}>Logout</Button>
@@ -157,8 +220,11 @@ export function AdminPage() {
 
         <TabsContent value="writers">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Writer Management</CardTitle>
+              <Button size="sm" onClick={() => handleOpenWriterModal()}>
+                <Plus className="w-4 h-4 mr-2" /> Add Writer
+              </Button>
             </CardHeader>
             <CardContent>
               <Table>
@@ -173,7 +239,11 @@ export function AdminPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {writers.map((writer) => (
+                  {writers.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No writers found.</TableCell>
+                    </TableRow>
+                  ) : writers.map((writer) => (
                     <TableRow key={writer.id}>
                       <TableCell className="font-medium">{writer.name}</TableCell>
                       <TableCell>{writer.email}</TableCell>
@@ -187,7 +257,14 @@ export function AdminPage() {
                       <TableCell>{writer.rating} / 5.0</TableCell>
                       <TableCell>{writer.activeOrders}</TableCell>
                       <TableCell className="text-right">
-                        <Button size="sm" variant="outline">Edit</Button>
+                        <div className="flex justify-end gap-2">
+                          <Button size="sm" variant="outline" onClick={() => handleOpenWriterModal(writer.id)}>
+                            <Edit2 className="w-3 h-3" />
+                          </Button>
+                          <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => handleDeleteWriter(writer.id)}>
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -275,27 +352,33 @@ export function AdminPage() {
               </TabsContent>
 
               <TabsContent value="messages" className="space-y-4 mt-6">
-                <div className="bg-secondary p-4 rounded-lg text-sm space-y-2 max-h-[300px] overflow-y-auto">
-                  <p><strong>Client:</strong> Hi, when will my resume be ready?</p>
-                  <p><strong>Writer:</strong> Almost done! Should have it by end of day tomorrow.</p>
-                </div>
+                <ScrollArea className="h-[300px] border rounded-lg p-4 bg-secondary/20">
+                   {orderMessages.length === 0 ? (
+                      <div className="text-center text-muted-foreground py-8">
+                        <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-20" />
+                        <p>No messages exchanged yet.</p>
+                      </div>
+                   ) : (
+                     <div className="space-y-4">
+                       {orderMessages.map((msg) => (
+                         <div key={msg.id} className="flex flex-col gap-1">
+                           <div className="flex justify-between text-xs text-muted-foreground px-1">
+                             <span className="font-medium">{msg.role === "writer" ? "Writer" : msg.role === "admin" ? "Admin" : "Client"}</span>
+                             <span>{new Date(msg.timestamp).toLocaleString()}</span>
+                           </div>
+                           <div className={`p-3 rounded-lg text-sm ${msg.role === "writer" ? "bg-white border" : msg.role === "admin" ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>
+                             {msg.text}
+                           </div>
+                         </div>
+                       ))}
+                     </div>
+                   )}
+                </ScrollArea>
               </TabsContent>
             </Tabs>
           )}
         </DialogContent>
       </Dialog>
-
-      {/* Settings Button */}
-      <Button 
-        onClick={() => setSelectedOrder("settings")} 
-        variant="outline" 
-        size="lg"
-        className="fixed bottom-8 right-8 gap-2 shadow-lg bg-background"
-        data-testid="button-admin-settings"
-      >
-        <Settings className="w-5 h-5" />
-        Admin Settings
-      </Button>
 
       {/* Admin Settings Modal */}
       <Dialog open={selectedOrder === "settings"} onOpenChange={(open) => !open && setSelectedOrder(null)}>
@@ -304,6 +387,37 @@ export function AdminPage() {
             <DialogTitle>Admin Settings</DialogTitle>
           </DialogHeader>
           <AdminSettings />
+        </DialogContent>
+      </Dialog>
+
+      {/* Writer Add/Edit Modal */}
+      <Dialog open={isWriterModalOpen} onOpenChange={setIsWriterModalOpen}>
+        <DialogContent>
+           <DialogHeader>
+             <DialogTitle>{editingWriter ? "Edit Writer" : "Add New Writer"}</DialogTitle>
+           </DialogHeader>
+           <form onSubmit={handleSaveWriter} className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="w-name">Full Name</Label>
+                <Input id="w-name" value={writerForm.name} onChange={(e) => setWriterForm(p => ({...p, name: e.target.value}))} required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="w-email">Email</Label>
+                <Input id="w-email" type="email" value={writerForm.email} onChange={(e) => setWriterForm(p => ({...p, email: e.target.value}))} required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="w-specialties">Specialties (comma separated)</Label>
+                <Input id="w-specialties" placeholder="e.g. Tech, Finance, Medical" value={writerForm.specialties} onChange={(e) => setWriterForm(p => ({...p, specialties: e.target.value}))} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="w-rating">Initial Rating</Label>
+                <Input id="w-rating" type="number" step="0.1" min="0" max="5" value={writerForm.rating} onChange={(e) => setWriterForm(p => ({...p, rating: e.target.value}))} />
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsWriterModalOpen(false)}>Cancel</Button>
+                <Button type="submit">Save Writer</Button>
+              </DialogFooter>
+           </form>
         </DialogContent>
       </Dialog>
     </div>

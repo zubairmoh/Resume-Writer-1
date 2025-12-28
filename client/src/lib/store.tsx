@@ -32,6 +32,16 @@ interface Order {
   escrowStatus: "held" | "released" | "refunded";
 }
 
+interface Message {
+  id: string;
+  orderId: string;
+  senderId: string;
+  senderName: string;
+  role: UserRole;
+  text: string;
+  timestamp: string;
+}
+
 interface Notification {
   id: string;
   message: string;
@@ -72,8 +82,12 @@ interface AppContextType {
   updateSettings: (settings: AdminSettings) => void;
   writers: Writer[];
   addWriter: (writer: Writer) => void;
+  updateWriter: (id: string, updates: Partial<Writer>) => void;
+  deleteWriter: (id: string) => void;
   assignWriter: (orderId: string, writerId: string) => void;
   releaseEscrow: (orderId: string) => void;
+  messages: Message[];
+  addMessage: (msg: Omit<Message, "id" | "timestamp">) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -83,6 +97,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [writers, setWriters] = useState<Writer[]>([
     { id: "WR-001", name: "Sarah Jenkins", email: "sarah@proresumes.ca", activeOrders: 2, rating: 4.9, specialties: ["Tech", "Executive"] },
     { id: "WR-002", name: "Michael Chen", email: "michael@proresumes.ca", activeOrders: 1, rating: 4.8, specialties: ["Finance", "Entry Level"] },
+  ]);
+
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: "msg-1",
+      orderId: "ORD-123",
+      senderId: "WR-001",
+      senderName: "Sarah Jenkins",
+      role: "writer",
+      text: "Hi there! I'm Sarah, and I'll be working on your resume. Could you provide a bit more detail about your last role?",
+      timestamp: "2024-12-28T10:00:00",
+    },
+    {
+      id: "msg-2",
+      orderId: "ORD-123",
+      senderId: "USR-001",
+      senderName: "Client",
+      role: "client",
+      text: "Hi Sarah! Sure, I managed a team of 5 developers and led the migration to AWS.",
+      timestamp: "2024-12-28T10:30:00",
+    }
   ]);
 
   const [orders, setOrders] = useState<Order[]>([
@@ -203,12 +238,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setWriters(prev => [...prev, writer]);
   };
 
+  const updateWriter = (id: string, updates: Partial<Writer>) => {
+    setWriters(prev => prev.map(w => w.id === id ? { ...w, ...updates } : w));
+  };
+
+  const deleteWriter = (id: string) => {
+    setWriters(prev => prev.filter(w => w.id !== id));
+  };
+
   const assignWriter = (orderId: string, writerId: string) => {
     setOrders(prev => prev.map(o => o.id === orderId ? { ...o, assignedWriterId: writerId } : o));
   };
 
   const releaseEscrow = (orderId: string) => {
     setOrders(prev => prev.map(o => o.id === orderId ? { ...o, escrowStatus: "released" } : o));
+  };
+
+  const addMessage = (msg: Omit<Message, "id" | "timestamp">) => {
+    const newMessage: Message = {
+      ...msg,
+      id: Date.now().toString(),
+      timestamp: new Date().toISOString(),
+    };
+    setMessages(prev => [...prev, newMessage]);
   };
 
   return (
@@ -229,8 +281,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         updateSettings,
         writers,
         addWriter,
+        updateWriter,
+        deleteWriter,
         assignWriter,
         releaseEscrow,
+        messages,
+        addMessage,
       }}
     >
       {children}
