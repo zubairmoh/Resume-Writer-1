@@ -87,7 +87,7 @@ export function ATSScanner() {
 
   return (
     <section className="py-24 bg-secondary/30" id="ats-scanner">
-      <div className="container px-4">
+      <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Does Your Resume Pass the 6-Second Test?</h2>
           <p className="text-muted-foreground max-w-xl mx-auto">

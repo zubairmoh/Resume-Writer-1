@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 const templates = [
   {
@@ -115,9 +116,21 @@ const templates = [
 export function TemplateGallery() {
   const [selected, setSelected] = useState(templates[0].id);
 
+  const handleSelect = (id: string) => {
+    setSelected(id);
+    const template = templates.find(t => t.id === id);
+    toast({
+      title: "Template Selected",
+      description: `Great choice! We've noted your preference for "${template?.name}".`,
+    });
+    
+    // Smooth scroll to pricing to drive conversion
+    document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" });
+  };
+
   return (
     <section className="py-24 bg-slate-50">
-      <div className="container px-4">
+      <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold mb-4 font-display">Proven Canadian Templates</h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
@@ -152,7 +165,14 @@ export function TemplateGallery() {
                       <h3 className="font-bold">{template.name}</h3>
                       <p className="text-xs text-muted-foreground">{template.style}</p>
                     </div>
-                    <Button size="sm" variant={selected === template.id ? "default" : "secondary"}>
+                    <Button 
+                      size="sm" 
+                      variant={selected === template.id ? "default" : "secondary"}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSelect(template.id);
+                      }}
+                    >
                       {selected === template.id ? <Check className="w-4 h-4 mr-1" /> : null}
                       {selected === template.id ? "Selected" : "Use Template"}
                     </Button>

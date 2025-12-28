@@ -10,7 +10,7 @@ import { Star } from "lucide-react";
 function TrustSection() {
   return (
     <section className="py-12 bg-secondary/20 border-y">
-      <div className="container px-4">
+      <div className="container mx-auto px-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center items-center opacity-70 grayscale hover:grayscale-0 transition-all">
           {/* Mock Logos - In real app use SVG/Images */}
           <div className="font-bold text-xl font-display">Forbes</div>
