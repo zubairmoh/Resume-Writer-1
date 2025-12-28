@@ -16,16 +16,40 @@ export function LoginPage() {
   const { login } = useApp();
   const navigate = useNavigate();
 
+  const handleQuickLogin = (role: "admin" | "writer" | "client") => {
+    if (role === "admin") {
+      const email = "admin@resumepro.com";
+      setEmail(email);
+      setPassword("demo");
+      login(email, "admin");
+      navigate("/admin");
+    } else if (role === "writer") {
+      const email = "writer@proresumes.ca";
+      setEmail(email);
+      setPassword("demo");
+      login(email, "writer");
+      navigate("/writer");
+    } else {
+      const email = "user@example.com";
+      setEmail(email);
+      setPassword("demo");
+      login(email, "client");
+      navigate("/dashboard");
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Submitting login with:", email); // Debugging
+    
     const newErrors: typeof errors = {};
 
     // Validation
     if (!email) newErrors.email = "Email is required";
     if (!password) newErrors.password = "Password is required";
-    if (!captchaChecked) {
-      newErrors.password = "Please verify you are not a robot";
-    }
+    // if (!captchaChecked) {
+    //   newErrors.password = "Please verify you are not a robot";
+    // }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -34,15 +58,20 @@ export function LoginPage() {
 
     setErrors({});
 
+    const normalizedEmail = email.trim().toLowerCase();
+
     // Mock Login Logic
-    if (email === "admin@resumepro.com") {
-      login(email, "admin");
+    if (normalizedEmail === "admin@resumepro.com") {
+      console.log("Logging in as Admin");
+      login(normalizedEmail, "admin");
       navigate("/admin");
-    } else if (email.includes("writer")) {
-      login(email, "writer");
+    } else if (normalizedEmail.includes("writer")) {
+      console.log("Logging in as Writer");
+      login(normalizedEmail, "writer");
       navigate("/writer");
     } else {
-      login(email, "client");
+      console.log("Logging in as Client");
+      login(normalizedEmail, "client");
       navigate("/dashboard");
     }
   };
@@ -127,24 +156,24 @@ export function LoginPage() {
                 <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">Demo Access</span>
+                <span className="bg-background px-2 text-muted-foreground">Quick Login</span>
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-2 w-full">
-              <Button type="button" variant="outline" size="sm" onClick={() => { setEmail("admin@resumepro.com"); setPassword("demo"); }}>
+              <Button type="button" variant="outline" size="sm" onClick={() => handleQuickLogin("admin")}>
                 Admin
               </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => { setEmail("writer@proresumes.ca"); setPassword("demo"); }}>
+              <Button type="button" variant="outline" size="sm" onClick={() => handleQuickLogin("writer")}>
                 Writer
               </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => { setEmail("user@example.com"); setPassword("demo"); }}>
+              <Button type="button" variant="outline" size="sm" onClick={() => handleQuickLogin("client")}>
                 Client
               </Button>
             </div>
             
             <div className="text-xs text-center text-muted-foreground mt-2">
-              <p>Click a role above to pre-fill credentials</p>
+              <p>One-click login for testing</p>
             </div>
           </CardFooter>
         </form>
