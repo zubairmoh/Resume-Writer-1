@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
-import { FileText, MessageSquare, CheckCircle, DollarSign, LogOut, Send, User, Upload, History } from "lucide-react";
+import { FileText, MessageSquare, CheckCircle, DollarSign, LogOut, Send, User, Upload, History, TrendingUp, Star, Clock, Award } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
@@ -81,9 +81,46 @@ export function WriterPage() {
       </header>
 
       <main className="flex-1 p-6 grid grid-cols-1 md:grid-cols-12 gap-6 max-w-7xl mx-auto w-full">
-        {/* Sidebar: Order List */}
-        <div className="md:col-span-4 space-y-4">
-          <Card className="h-[calc(100vh-140px)] flex flex-col border-none shadow-md">
+        {/* Sidebar: Order List & Stats */}
+        <div className="md:col-span-4 space-y-6">
+           {/* Writer Stats Card - NEW FEATURE */}
+           <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+             <CardHeader className="pb-2">
+               <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+                 <Award className="w-4 h-4 text-primary" /> Performance
+               </CardTitle>
+             </CardHeader>
+             <CardContent>
+               <div className="grid grid-cols-2 gap-4">
+                 <div>
+                   <div className="text-2xl font-bold text-foreground">4.9</div>
+                   <div className="text-xs text-muted-foreground flex items-center gap-1">
+                     <Star className="w-3 h-3 fill-yellow-500 text-yellow-500" /> Avg Rating
+                   </div>
+                 </div>
+                 <div>
+                   <div className="text-2xl font-bold text-foreground">$1,240</div>
+                   <div className="text-xs text-muted-foreground flex items-center gap-1">
+                     <DollarSign className="w-3 h-3" /> This Month
+                   </div>
+                 </div>
+                 <div>
+                   <div className="text-2xl font-bold text-foreground">98%</div>
+                   <div className="text-xs text-muted-foreground flex items-center gap-1">
+                     <Clock className="w-3 h-3" /> On-Time
+                   </div>
+                 </div>
+                 <div>
+                   <div className="text-2xl font-bold text-foreground">12</div>
+                   <div className="text-xs text-muted-foreground flex items-center gap-1">
+                     <CheckCircle className="w-3 h-3" /> Completed
+                   </div>
+                 </div>
+               </div>
+             </CardContent>
+           </Card>
+
+          <Card className="h-[calc(100vh-340px)] flex flex-col border-none shadow-md">
             <CardHeader className="pb-3 border-b bg-card rounded-t-lg">
               <CardTitle className="text-lg flex items-center gap-2">
                 <FileText className="w-5 h-5 text-primary" />

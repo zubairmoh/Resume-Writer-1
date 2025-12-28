@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { FileText, Send, User, Upload, MessageSquare, AlertTriangle, FileInput, History } from "lucide-react";
+import { FileText, Send, User, Upload, MessageSquare, AlertTriangle, FileInput, History, CheckCircle2, Circle, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { RevisionTimer } from "@/components/RevisionTimer";
 import { OrderHistory } from "@/components/OrderHistory";
@@ -15,6 +15,29 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
+
+// Add this component locally
+function TimelineItem({ title, date, status, isLast }: { title: string, date: string, status: 'completed' | 'current' | 'upcoming', isLast?: boolean }) {
+  return (
+    <div className="flex gap-4">
+      <div className="flex flex-col items-center">
+        <div className={`w-3 h-3 rounded-full z-10 ${
+          status === 'completed' ? 'bg-primary' : 
+          status === 'current' ? 'bg-primary animate-pulse' : 'bg-muted-foreground/30'
+        }`} />
+        {!isLast && (
+          <div className={`w-0.5 flex-1 my-1 ${
+             status === 'completed' ? 'bg-primary/50' : 'bg-muted-foreground/20'
+          }`} />
+        )}
+      </div>
+      <div className={`pb-6 ${status === 'upcoming' ? 'opacity-50' : ''}`}>
+        <p className="text-sm font-medium leading-none">{title}</p>
+        <p className="text-xs text-muted-foreground mt-1">{date}</p>
+      </div>
+    </div>
+  );
+}
 
 export function DashboardPage() {
   const { user, logout, orders, messages, addMessage, addRevisionRequest } = useApp();
@@ -169,15 +192,37 @@ export function DashboardPage() {
                         </div>
                       </div>
 
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                           <span className="font-medium">Progress</span>
-                           <span className="text-muted-foreground">33%</span>
+                      {/* Replaced Simple Progress Bar with Timeline */}
+                      <div className="space-y-4 pt-2">
+                        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Order Timeline</h4>
+                        <div className="pl-2">
+                          <TimelineItem 
+                            title="Order Placed" 
+                            date="Dec 25, 2024" 
+                            status="completed" 
+                          />
+                          <TimelineItem 
+                            title="Writer Assigned" 
+                            date="Dec 26, 2024" 
+                            status="completed" 
+                          />
+                          <TimelineItem 
+                            title="Initial Draft" 
+                            date="In Progress" 
+                            status="current" 
+                          />
+                          <TimelineItem 
+                            title="Client Review" 
+                            date="Pending" 
+                            status="upcoming" 
+                          />
+                          <TimelineItem 
+                            title="Final Delivery" 
+                            date="Pending" 
+                            status="upcoming" 
+                            isLast
+                          />
                         </div>
-                        <div className="w-full bg-secondary rounded-full h-2.5 overflow-hidden">
-                          <div className="bg-primary h-full rounded-full w-[33%] transition-all duration-1000" />
-                        </div>
-                        <p className="text-xs text-muted-foreground text-right mt-1">Drafting in progress...</p>
                       </div>
 
                       {/* File Versions / Revisions */}
