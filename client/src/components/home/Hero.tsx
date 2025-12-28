@@ -2,8 +2,11 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import heroBg from "@assets/generated_images/minimalist_abstract_tech_office_background.png";
 import { CheckCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export function Hero() {
+  const navigate = useNavigate();
+
   const handleScrollToScanner = () => {
     document.getElementById("ats-scanner")?.scrollIntoView({ behavior: "smooth" });
   };
@@ -74,10 +77,10 @@ export function Hero() {
               size="lg" 
               variant="outline" 
               className="h-14 px-8 text-lg bg-background/50 backdrop-blur-sm"
-              onClick={handleScrollToPricing}
+              onClick={() => navigate("/signup")}
               data-testid="button-view-pricing"
             >
-              View Packages
+              Get Started
             </Button>
           </div>
         </motion.div>

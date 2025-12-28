@@ -1,18 +1,20 @@
 import { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, FileText, CheckCircle, Loader2, Lock } from "lucide-react";
+import { Upload, FileText, CheckCircle, Loader2, Lock, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Card } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import * as pdfjsLib from "pdfjs-dist";
+import { useNavigate } from "react-router-dom";
 
 // Configure worker for pdf.js
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 export function ATSScanner() {
+  const navigate = useNavigate();
   const [file, setFile] = useState<File | null>(null);
   const [scanning, setScanning] = useState(false);
   const [score, setScore] = useState<number | null>(null);
@@ -73,10 +75,14 @@ export function ATSScanner() {
     setUnlocked(true);
     toast({
       title: "Result Unlocked",
-      description: "You can now view your full report.",
+      description: "Redirecting to your full report...",
     });
-    // Here we would save to Supabase "leads" table
-    console.log("Captured Lead:", email);
+    // In a real app, we'd save the lead here
+    
+    // Redirect to signup to "save" the result
+    setTimeout(() => {
+        navigate("/signup");
+    }, 1500);
   };
 
   return (

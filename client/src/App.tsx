@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
@@ -9,7 +9,8 @@ import { LandingPage } from "@/pages/Landing";
 import { DashboardPage } from "@/pages/Dashboard";
 import { AdminPage } from "@/pages/Admin";
 import { WriterPage } from "@/pages/Writer";
-import { LoginPage } from "@/pages/Login";
+import { AuthPage } from "@/pages/Auth";
+import { CheckoutPage } from "@/pages/Checkout";
 import NotFound from "@/pages/not-found";
 
 function App() {
@@ -21,7 +22,9 @@ function App() {
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<LandingPage />} />
-              <Route path="/login" element={<LoginPage />} />
+              <Route path="/login" element={<AuthPage />} />
+              <Route path="/signup" element={<AuthPage />} />
+              <Route path="/checkout" element={<CheckoutPage />} />
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/admin" element={<AdminPage />} />
               <Route path="/writer" element={<WriterPage />} />

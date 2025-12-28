@@ -225,6 +225,35 @@ export function DashboardPage() {
                         </div>
                       </div>
 
+                      {/* ATS Score Card - NEW FEATURE */}
+                      {currentOrder.status !== "Completed" ? (
+                         <div className="bg-slate-900 text-white rounded-lg p-4 flex items-center justify-between shadow-lg">
+                           <div>
+                             <h4 className="font-bold flex items-center gap-2">
+                               <CheckCircle2 className="w-5 h-5 text-green-400" /> ATS Optimization Goal
+                             </h4>
+                             <p className="text-sm text-slate-300 mt-1">Targeting 95+ Score</p>
+                           </div>
+                           <div className="text-right">
+                             <span className="text-3xl font-bold text-green-400">95</span>
+                             <span className="text-sm text-slate-400">/100</span>
+                           </div>
+                         </div>
+                      ) : (
+                         <div className="bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg p-4 flex items-center justify-between shadow-lg">
+                           <div>
+                             <h4 className="font-bold flex items-center gap-2">
+                               <CheckCircle2 className="w-5 h-5 text-white" /> ATS Optimization Achieved!
+                             </h4>
+                             <p className="text-sm text-green-100 mt-1">Your resume is now top 1%</p>
+                           </div>
+                           <div className="text-right">
+                             <span className="text-3xl font-bold text-white">98</span>
+                             <span className="text-sm text-green-200">/100</span>
+                           </div>
+                         </div>
+                      )}
+
                       {/* File Versions / Revisions */}
                       <div className="bg-secondary/20 rounded-lg p-4 border space-y-3">
                          <h4 className="text-sm font-semibold flex items-center gap-2">
@@ -305,8 +334,8 @@ export function DashboardPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="flex-1 p-0 flex flex-col h-full bg-slate-50 dark:bg-slate-900/50">
-                  <ScrollArea className="flex-1 p-4" viewportRef={scrollRef}>
-                    <div className="space-y-4 pb-4">
+                  <ScrollArea className="flex-1 p-4">
+                    <div className="space-y-4 pb-4" ref={scrollRef}>
                       {orderMessages.map((msg) => (
                         <div key={msg.id} className={`flex ${msg.role === "client" ? "justify-end" : "justify-start"}`}>
                           <div className={`flex flex-col ${msg.role === "client" ? "items-end" : "items-start"} max-w-[80%]`}>
