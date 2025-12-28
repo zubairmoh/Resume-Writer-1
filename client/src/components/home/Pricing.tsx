@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -28,6 +29,7 @@ const TIERS = [
 ];
 
 export function Pricing() {
+  const navigate = useNavigate();
   const [selectedTier, setSelectedTier] = useState("Professional");
   const [addOns, setAddOns] = useState({
     coverLetter: false,
@@ -138,9 +140,9 @@ export function Pricing() {
                     variant={tier.popular ? "default" : "outline"}
                     onClick={(e) => {
                       e.stopPropagation();
-                      // Handle mock checkout
-                      alert(`Proceeding to mock Stripe Checkout for ${tier.name} Package ($${finalPrice})`);
+                      navigate("/login");
                     }}
+                    data-testid={`button-get-started-${tier.name.toLowerCase()}`}
                   >
                     Get Started
                   </Button>

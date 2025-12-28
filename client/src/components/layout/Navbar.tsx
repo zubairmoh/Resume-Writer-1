@@ -23,7 +23,7 @@ export function Navbar() {
               <Link to={user.role === "admin" ? "/admin" : "/dashboard"}>
                 <Button variant="ghost">Dashboard</Button>
               </Link>
-              <Button onClick={logout} variant="outline">Logout</Button>
+              <Button onClick={() => { logout(); window.location.href = "/"; }} variant="outline" data-testid="button-logout">Logout</Button>
             </>
           ) : (
             <Link to="/login">

@@ -1,18 +1,28 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export function AdminPage() {
   const { user, logout, orders } = useApp();
   const navigate = useNavigate();
+  const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user || user.role !== "admin") {
+      navigate("/login");
+    }
+  }, [user, navigate]);
 
   if (!user || user.role !== "admin") {
-    navigate("/login");
     return null;
   }
+
+  const order = selectedOrder ? orders.find(o => o.id === selectedOrder) : null;
 
   return (
     <div className="min-h-screen bg-background p-8">
@@ -88,7 +98,7 @@ export function AdminPage() {
                   <TableCell>{order.date}</TableCell>
                   <TableCell className="text-right">${order.total}</TableCell>
                   <TableCell className="text-right">
-                    <Button size="sm" variant="ghost">View</Button>
+                    <Button size="sm" variant="ghost" onClick={() => setSelectedOrder(order.id)} data-testid={`button-view-${order.id}`}>View</Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -96,6 +106,57 @@ export function AdminPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Order Detail Modal */}
+      <Dialog open={!!selectedOrder} onOpenChange={(open) => !open && setSelectedOrder(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Order Details</DialogTitle>
+          </DialogHeader>
+          {order && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-muted-foreground">Order ID</p>
+                  <p className="font-medium">{order.id}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Date</p>
+                  <p className="font-medium">{order.date}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Package</p>
+                  <p className="font-medium">{order.tier}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Total</p>
+                  <p className="font-medium">${order.total}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Status</p>
+                  <Badge variant={order.status === "Completed" ? "default" : "secondary"}>
+                    {order.status}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Add-ons</p>
+                  <p className="font-medium">{order.addOns.coverLetter ? "CL + " : ""}{order.addOns.linkedin ? "LinkedIn" : "None"}</p>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <h4 className="font-semibold">Recent Messages</h4>
+                <div className="bg-secondary p-4 rounded-lg text-sm space-y-2 max-h-[200px] overflow-y-auto">
+                  <p><strong>Client:</strong> Hi, when will my resume be ready?</p>
+                  <p><strong>Writer:</strong> Almost done! Should have it by end of day tomorrow.</p>
+                </div>
+              </div>
+
+              <Button className="w-full" onClick={() => setSelectedOrder(null)}>Close</Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

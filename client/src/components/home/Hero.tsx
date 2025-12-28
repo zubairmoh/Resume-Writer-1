@@ -3,6 +3,14 @@ import { motion } from "framer-motion";
 import heroBg from "@assets/generated_images/minimalist_abstract_tech_office_background.png";
 
 export function Hero() {
+  const handleScrollToScanner = () => {
+    document.getElementById("ats-scanner")?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const handleScrollToPricing = () => {
+    document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" });
+  };
+
   return (
     <section className="relative min-h-[600px] flex items-center justify-center overflow-hidden">
       {/* Background with overlay */}
@@ -34,10 +42,21 @@ export function Hero() {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="h-14 px-8 text-lg shadow-lg hover:shadow-primary/20 transition-all">
+            <Button 
+              size="lg" 
+              className="h-14 px-8 text-lg shadow-lg hover:shadow-primary/20 transition-all" 
+              onClick={handleScrollToScanner}
+              data-testid="button-check-resume"
+            >
               Check My Resume Score
             </Button>
-            <Button size="lg" variant="outline" className="h-14 px-8 text-lg bg-background/50 backdrop-blur-sm">
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="h-14 px-8 text-lg bg-background/50 backdrop-blur-sm"
+              onClick={handleScrollToPricing}
+              data-testid="button-view-pricing"
+            >
               View Pricing
             </Button>
           </div>
