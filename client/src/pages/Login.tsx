@@ -38,6 +38,9 @@ export function LoginPage() {
     if (email === "admin@resumepro.com") {
       login(email, "admin");
       navigate("/admin");
+    } else if (email.includes("writer")) {
+      login(email, "writer");
+      navigate("/writer");
     } else {
       login(email, "client");
       navigate("/dashboard");
@@ -48,7 +51,7 @@ export function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-secondary/30 px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <h1 className="text-2xl font-bold font-display text-primary">ResumePro</h1>
+          <h1 className="text-2xl font-bold font-display text-primary">ProResumes.ca</h1>
           <p className="text-muted-foreground">Welcome back</p>
         </CardHeader>
         <form onSubmit={handleSubmit}>
@@ -118,8 +121,9 @@ export function LoginPage() {
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
             <Button type="submit" className="w-full" data-testid="button-signin">Sign In</Button>
-            <div className="text-xs text-center text-muted-foreground">
+            <div className="text-xs text-center text-muted-foreground space-y-1">
               <p>Demo Admin: admin@resumepro.com</p>
+              <p>Demo Writer: writer@proresumes.ca</p>
               <p>Demo Client: user@example.com</p>
             </div>
           </CardFooter>

@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import heroBg from "@assets/generated_images/minimalist_abstract_tech_office_background.png";
+import { CheckCircle } from "lucide-react";
 
 export function Hero() {
   const handleScrollToScanner = () => {
@@ -12,15 +13,15 @@ export function Hero() {
   };
 
   return (
-    <section className="relative min-h-[600px] flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-[700px] flex items-center justify-center overflow-hidden">
       {/* Background with overlay */}
       <div className="absolute inset-0 z-0">
         <img 
           src={heroBg} 
           alt="Office Background" 
-          className="w-full h-full object-cover opacity-20"
+          className="w-full h-full object-cover opacity-10"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/0 via-background/50 to-background" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/0 via-background/80 to-background" />
       </div>
 
       <div className="container relative z-10 px-4 text-center">
@@ -29,17 +30,36 @@ export function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <span className="inline-block py-1 px-3 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
-            AI-Powered Resume Optimization
-          </span>
-          <h1 className="text-5xl md:text-7xl font-bold font-display tracking-tight mb-6 text-foreground">
-            Beat the Bots. <br />
-            <span className="text-primary">Get Hired.</span>
+          <div className="flex justify-center mb-6">
+            <span className="inline-flex items-center py-1 px-3 rounded-full bg-red-50 text-red-700 text-sm font-medium border border-red-100">
+              <span className="mr-2 text-lg">🇨🇦</span> Canada's #1 Rated Resume Service
+            </span>
+          </div>
+
+          <h1 className="text-5xl md:text-7xl font-bold font-display tracking-tight mb-6 text-foreground max-w-4xl mx-auto">
+            Get Hired Faster with <br />
+            <span className="text-primary">ProResumes.ca</span>
           </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
-            Stop getting rejected by ATS algorithms. We scan your resume, score it, 
-            and rewrite it to help you land your dream interview.
+          
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed">
+            Expert Canadian writers. ATS-optimized formats. 
+            Join thousands of professionals in Toronto, Vancouver, and Montreal who landed their dream jobs.
           </p>
+
+          <div className="flex flex-wrap justify-center gap-6 mb-10 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-green-500" />
+              <span>100% Satisfaction Guarantee</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-green-500" />
+              <span>ATS-Compliant Formats</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-green-500" />
+              <span>Industry-Specific Writers</span>
+            </div>
+          </div>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
@@ -57,7 +77,7 @@ export function Hero() {
               onClick={handleScrollToPricing}
               data-testid="button-view-pricing"
             >
-              View Pricing
+              View Packages
             </Button>
           </div>
         </motion.div>

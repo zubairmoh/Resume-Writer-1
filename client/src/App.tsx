@@ -8,6 +8,7 @@ import { AppProvider } from "@/lib/store";
 import { LandingPage } from "@/pages/Landing";
 import { DashboardPage } from "@/pages/Dashboard";
 import { AdminPage } from "@/pages/Admin";
+import { WriterPage } from "@/pages/Writer";
 import { LoginPage } from "@/pages/Login";
 import NotFound from "@/pages/not-found";
 
@@ -23,6 +24,7 @@ function App() {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/admin" element={<AdminPage />} />
+              <Route path="/writer" element={<WriterPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

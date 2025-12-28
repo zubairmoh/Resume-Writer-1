@@ -1,10 +1,20 @@
 import React, { createContext, useContext, useState } from "react";
 
-type UserRole = "client" | "admin" | null;
+type UserRole = "client" | "admin" | "writer" | null;
 
 interface User {
   email: string;
   role: UserRole;
+  name?: string;
+}
+
+interface Writer {
+  id: string;
+  name: string;
+  email: string;
+  activeOrders: number;
+  rating: number;
+  specialties: string[];
 }
 
 interface Order {
@@ -18,6 +28,8 @@ interface Order {
   status: "Drafting" | "Review" | "Completed";
   date: string;
   daysRemaining: number;
+  assignedWriterId?: string;
+  escrowStatus: "held" | "released" | "refunded";
 }
 
 interface Notification {
@@ -58,12 +70,21 @@ interface AppContextType {
   addDocument: (doc: Document) => void;
   settings: AdminSettings;
   updateSettings: (settings: AdminSettings) => void;
+  writers: Writer[];
+  addWriter: (writer: Writer) => void;
+  assignWriter: (orderId: string, writerId: string) => void;
+  releaseEscrow: (orderId: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [writers, setWriters] = useState<Writer[]>([
+    { id: "WR-001", name: "Sarah Jenkins", email: "sarah@proresumes.ca", activeOrders: 2, rating: 4.9, specialties: ["Tech", "Executive"] },
+    { id: "WR-002", name: "Michael Chen", email: "michael@proresumes.ca", activeOrders: 1, rating: 4.8, specialties: ["Finance", "Entry Level"] },
+  ]);
+
   const [orders, setOrders] = useState<Order[]>([
     {
       id: "ORD-123",
@@ -73,6 +94,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       status: "Drafting",
       date: "2024-12-25",
       daysRemaining: 28,
+      assignedWriterId: "WR-001",
+      escrowStatus: "held",
     },
     {
       id: "ORD-124",
@@ -82,6 +105,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       status: "Review",
       date: "2024-12-20",
       daysRemaining: 23,
+      assignedWriterId: "WR-002",
+      escrowStatus: "held",
     },
   ]);
 
@@ -174,6 +199,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setSettings(newSettings);
   };
 
+  const addWriter = (writer: Writer) => {
+    setWriters(prev => [...prev, writer]);
+  };
+
+  const assignWriter = (orderId: string, writerId: string) => {
+    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, assignedWriterId: writerId } : o));
+  };
+
+  const releaseEscrow = (orderId: string) => {
+    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, escrowStatus: "released" } : o));
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -190,6 +227,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         addDocument,
         settings,
         updateSettings,
+        writers,
+        addWriter,
+        assignWriter,
+        releaseEscrow,
       }}
     >
       {children}
