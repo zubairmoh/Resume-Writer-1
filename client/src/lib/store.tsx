@@ -25,11 +25,12 @@ interface Order {
     linkedin: boolean;
   };
   total: number;
-  status: "Drafting" | "Review" | "Completed";
+  status: "Drafting" | "Review" | "Completed" | "Pending" | "In Progress" | "Under Review";
   date: string;
   daysRemaining: number;
   assignedWriterId?: string;
   escrowStatus: "held" | "released" | "refunded";
+  targetJobs?: { title: string; company: string; url?: string }[];
 }
 
 interface Message {
@@ -139,18 +140,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       tier: "Professional",
       addOns: { coverLetter: true, linkedin: false },
       total: 249,
-      status: "Drafting",
+      status: "In Progress",
       date: "2024-12-25",
       daysRemaining: 28,
       assignedWriterId: "WR-001",
       escrowStatus: "held",
+      targetJobs: [
+        { title: "Senior Software Engineer", company: "Shopify", url: "https://shopify.com/careers/..." },
+        { title: "Full Stack Developer", company: "Wealthsimple", url: "" }
+      ]
     },
     {
       id: "ORD-124",
       tier: "Entry",
       addOns: { coverLetter: false, linkedin: false },
       total: 99,
-      status: "Review",
+      status: "Under Review",
       date: "2024-12-20",
       daysRemaining: 23,
       assignedWriterId: "WR-002",

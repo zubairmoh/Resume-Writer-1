@@ -314,10 +314,54 @@ export function WriterPage() {
                 <Tabs defaultValue="chat" className="flex-1 flex flex-col min-h-0">
                   <TabsList className="w-full justify-start bg-card border shadow-sm p-1">
                     <TabsTrigger value="chat" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Client Chat</TabsTrigger>
+                    <TabsTrigger value="targeting" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Targeting</TabsTrigger>
                     <TabsTrigger value="documents" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Documents</TabsTrigger>
                     <TabsTrigger value="notes" className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Internal Notes</TabsTrigger>
                   </TabsList>
                   
+                  <TabsContent value="targeting" className="flex-1 mt-2">
+                    <Card className="h-full shadow-md border-none">
+                      <CardContent className="p-6">
+                        <div className="space-y-6">
+                           <div className="flex items-center justify-between">
+                             <h3 className="text-lg font-medium">Target Roles Strategy</h3>
+                             <Badge variant="outline">Client Input</Badge>
+                           </div>
+                           <p className="text-sm text-muted-foreground">The client has identified the following roles as their primary targets. Ensure the resume is keyword-optimized for these positions.</p>
+                           
+                           <div className="space-y-3">
+                             {activeOrder.targetJobs && activeOrder.targetJobs.length > 0 ? (
+                               activeOrder.targetJobs.map((job, i) => (
+                                 <div key={i} className="flex items-center justify-between p-4 border rounded-lg bg-card hover:bg-secondary/20 transition-colors">
+                                   <div className="flex items-center gap-4">
+                                     <div className="w-10 h-10 rounded bg-primary/10 flex items-center justify-center text-primary">
+                                       <Award className="w-5 h-5" />
+                                     </div>
+                                     <div>
+                                       <p className="font-medium">{job.title}</p>
+                                       <p className="text-sm text-muted-foreground">{job.company}</p>
+                                     </div>
+                                   </div>
+                                   {job.url && (
+                                     <a href={job.url} target="_blank" rel="noreferrer">
+                                       <Button variant="ghost" size="sm" className="gap-2">
+                                          View Job <LayoutGrid className="w-3 h-3" />
+                                       </Button>
+                                     </a>
+                                   )}
+                                 </div>
+                               ))
+                             ) : (
+                               <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
+                                 <p>No target jobs submitted by client yet.</p>
+                               </div>
+                             )}
+                           </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
                   <TabsContent value="chat" className="flex-1 mt-2 min-h-0">
                     <Card className="h-full flex flex-col border-none shadow-md">
                       <CardContent className="flex-1 p-0 flex flex-col h-full bg-slate-50 dark:bg-slate-900/50">
