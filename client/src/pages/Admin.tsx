@@ -6,6 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AdminDocuments } from "@/components/AdminDocuments";
+import { AdminSettings } from "@/components/AdminSettings";
+import { Settings } from "lucide-react";
 
 export function AdminPage() {
   const { user, logout, orders } = useApp();
@@ -109,52 +113,83 @@ export function AdminPage() {
 
       {/* Order Detail Modal */}
       <Dialog open={!!selectedOrder} onOpenChange={(open) => !open && setSelectedOrder(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Order Details</DialogTitle>
           </DialogHeader>
           {order && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-muted-foreground">Order ID</p>
-                  <p className="font-medium">{order.id}</p>
+            <Tabs defaultValue="info" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="info">Info</TabsTrigger>
+                <TabsTrigger value="documents">Documents</TabsTrigger>
+                <TabsTrigger value="messages">Messages</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="info" className="space-y-6 mt-6">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Order ID</p>
+                    <p className="font-medium">{order.id}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Date</p>
+                    <p className="font-medium">{order.date}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Package</p>
+                    <p className="font-medium">{order.tier}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Total</p>
+                    <p className="font-medium">${order.total}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Status</p>
+                    <Badge variant={order.status === "Completed" ? "default" : "secondary"}>
+                      {order.status}
+                    </Badge>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Add-ons</p>
+                    <p className="font-medium">{order.addOns.coverLetter ? "CL + " : ""}{order.addOns.linkedin ? "LinkedIn" : "None"}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-muted-foreground">Date</p>
-                  <p className="font-medium">{order.date}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Package</p>
-                  <p className="font-medium">{order.tier}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Total</p>
-                  <p className="font-medium">${order.total}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Status</p>
-                  <Badge variant={order.status === "Completed" ? "default" : "secondary"}>
-                    {order.status}
-                  </Badge>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Add-ons</p>
-                  <p className="font-medium">{order.addOns.coverLetter ? "CL + " : ""}{order.addOns.linkedin ? "LinkedIn" : "None"}</p>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <h4 className="font-semibold">Recent Messages</h4>
-                <div className="bg-secondary p-4 rounded-lg text-sm space-y-2 max-h-[200px] overflow-y-auto">
+              </TabsContent>
+
+              <TabsContent value="documents" className="mt-6">
+                <AdminDocuments orderId={order.id} />
+              </TabsContent>
+
+              <TabsContent value="messages" className="space-y-4 mt-6">
+                <div className="bg-secondary p-4 rounded-lg text-sm space-y-2 max-h-[300px] overflow-y-auto">
                   <p><strong>Client:</strong> Hi, when will my resume be ready?</p>
                   <p><strong>Writer:</strong> Almost done! Should have it by end of day tomorrow.</p>
                 </div>
-              </div>
-
-              <Button className="w-full" onClick={() => setSelectedOrder(null)}>Close</Button>
-            </div>
+              </TabsContent>
+            </Tabs>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Settings Button */}
+      <Button 
+        onClick={() => setSelectedOrder("settings")} 
+        variant="outline" 
+        size="lg"
+        className="fixed bottom-8 right-8 gap-2 shadow-lg"
+        data-testid="button-admin-settings"
+      >
+        <Settings className="w-5 h-5" />
+        Admin Settings
+      </Button>
+
+      {/* Admin Settings Modal */}
+      <Dialog open={selectedOrder === "settings"} onOpenChange={(open) => !open && setSelectedOrder(null)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Admin Settings</DialogTitle>
+          </DialogHeader>
+          <AdminSettings />
         </DialogContent>
       </Dialog>
     </div>

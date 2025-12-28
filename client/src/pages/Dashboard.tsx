@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { FileText, Send, User, Upload } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { RevisionTimer } from "@/components/RevisionTimer";
+import { OrderHistory } from "@/components/OrderHistory";
 
 export function DashboardPage() {
   const { user, logout, orders } = useApp();
@@ -87,7 +89,9 @@ export function DashboardPage() {
               <TabsTrigger value="chat">Chat with Writer</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="order" className="flex-1">
+            <TabsContent value="order" className="flex-1 space-y-6">
+              <RevisionTimer daysRemaining={currentOrder.daysRemaining} orderId={currentOrder.id} />
+              
               <Card>
                 <CardHeader>
                   <CardTitle className="flex justify-between items-center">
@@ -122,6 +126,8 @@ export function DashboardPage() {
                   </div>
                 </CardContent>
               </Card>
+
+              <OrderHistory orders={orders} />
             </TabsContent>
 
             <TabsContent value="uploads" className="flex-1">

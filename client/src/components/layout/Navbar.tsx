@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useApp } from "@/lib/store";
+import { NotificationBell } from "@/components/NotificationBell";
 
 export function Navbar() {
   const { user, logout } = useApp();
@@ -18,6 +19,7 @@ export function Navbar() {
         </Link>
 
         <div className="flex items-center gap-4">
+          {user && <NotificationBell />}
           {user ? (
             <>
               <Link to={user.role === "admin" ? "/admin" : "/dashboard"}>
