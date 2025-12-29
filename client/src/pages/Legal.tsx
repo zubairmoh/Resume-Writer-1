@@ -1,9 +1,9 @@
 import { Navbar } from "@/components/layout/Navbar";
-import { useLocation } from "wouter";
+import { useLocation } from "react-router-dom";
 
 export function LegalPage() {
-  const [location] = useLocation();
-  const isPrivacy = location.includes("privacy");
+  const location = useLocation();
+  const isPrivacy = location.pathname.includes("privacy");
 
   return (
     <div className="min-h-screen bg-background">
