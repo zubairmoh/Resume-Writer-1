@@ -9,7 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AdminDocuments } from "@/components/AdminDocuments";
 import { AdminSettings } from "@/components/AdminSettings";
-import { Settings, Users, Briefcase, Plus, Trash2, Edit2, MessageSquare, DollarSign, PieChart, TrendingUp, AlertCircle, FileText } from "lucide-react";
+import { AdminLiveChat } from "@/components/AdminLiveChat";
+import { Settings, Users, Briefcase, Plus, Trash2, Edit2, MessageSquare, DollarSign, PieChart, TrendingUp, AlertCircle, FileText, MessageCircle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -180,6 +181,9 @@ export function AdminPage() {
           </TabsTrigger>
           <TabsTrigger value="leads" className="flex items-center gap-2">
             <FileText className="w-4 h-4" /> Leads
+          </TabsTrigger>
+          <TabsTrigger value="live-chat" className="flex items-center gap-2">
+            <MessageCircle className="w-4 h-4" /> Live Visitors
           </TabsTrigger>
           <TabsTrigger value="financials" className="flex items-center gap-2">
             <DollarSign className="w-4 h-4" /> Financials & Escrow
@@ -373,6 +377,10 @@ export function AdminPage() {
               </Table>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="live-chat">
+           <AdminLiveChat />
         </TabsContent>
 
         <TabsContent value="financials">
