@@ -10,6 +10,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AdminDocuments } from "@/components/AdminDocuments";
 import { AdminSettings } from "@/components/AdminSettings";
 import { Settings, Users, Briefcase, Plus, Trash2, Edit2, MessageSquare, DollarSign, PieChart, TrendingUp, AlertCircle, FileText } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Progress } from "@/components/ui/progress";
 
 // Mock Leads Data
 const leads = [
@@ -33,7 +39,94 @@ export function AdminPage() {
   const order = selectedOrder && selectedOrder !== "settings" ? orders.find(o => o.id === selectedOrder) : null;
   const orderMessages = order ? messages.filter(m => m.orderId === order.id).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()) : [];
 
-  // ... (rest of state)
+  // Financial Calculations
+  const totalEscrowHeld = orders.filter(o => o.escrowStatus === "held").reduce((acc, curr) => acc + curr.total, 0);
+  const totalReleased = orders.filter(o => o.escrowStatus === "released").reduce((acc, curr) => acc + curr.total, 0);
+  const totalRefunded = orders.filter(o => o.escrowStatus === "refunded").reduce((acc, curr) => acc + curr.total, 0);
+
+  useEffect(() => {
+    if (!user || user.role !== "admin") {
+      navigate("/login");
+    }
+  }, [user, navigate]);
+
+  if (!user || user.role !== "admin") {
+    return null;
+  }
+
+  const handleAssignWriter = (writerId: string) => {
+    if (selectedOrder) {
+      assignWriter(selectedOrder, writerId);
+      toast({
+        title: "Writer Assigned",
+        description: "The order has been assigned successfully.",
+      });
+    }
+  };
+
+  const handleReleaseEscrow = (orderId: string) => {
+    if (confirm("Are you sure you want to release funds to the writer? This cannot be undone.")) {
+      releaseEscrow(orderId);
+      toast({
+        title: "Funds Released",
+        description: "Payment has been released from escrow.",
+      });
+    }
+  };
+
+  // Writer Management Handlers
+  const handleOpenWriterModal = (writerId?: string) => {
+    if (writerId) {
+      const writer = writers.find(w => w.id === writerId);
+      if (writer) {
+        setEditingWriter(writerId);
+        setWriterForm({
+          name: writer.name,
+          email: writer.email,
+          specialties: writer.specialties.join(", "),
+          rating: writer.rating.toString()
+        });
+      }
+    } else {
+      setEditingWriter(null);
+      setWriterForm({ name: "", email: "", specialties: "", rating: "5.0" });
+    }
+    setIsWriterModalOpen(true);
+  };
+
+  const handleSaveWriter = (e: React.FormEvent) => {
+    e.preventDefault();
+    const specialtiesArray = writerForm.specialties.split(",").map(s => s.trim()).filter(Boolean);
+    const ratingNum = parseFloat(writerForm.rating) || 5.0;
+
+    if (editingWriter) {
+      updateWriter(editingWriter, {
+        name: writerForm.name,
+        email: writerForm.email,
+        specialties: specialtiesArray,
+        rating: ratingNum
+      });
+      toast({ title: "Writer Updated", description: "Writer details saved successfully." });
+    } else {
+      addWriter({
+        id: `WR-${Date.now()}`,
+        activeOrders: 0,
+        name: writerForm.name,
+        email: writerForm.email,
+        specialties: specialtiesArray,
+        rating: ratingNum
+      });
+      toast({ title: "Writer Added", description: "New writer added to the team." });
+    }
+    setIsWriterModalOpen(false);
+  };
+
+  const handleDeleteWriter = (id: string) => {
+    if (confirm("Are you sure you want to delete this writer?")) {
+      deleteWriter(id);
+      toast({ title: "Writer Deleted", description: "Writer removed from the system." });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background p-8">
