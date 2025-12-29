@@ -5,8 +5,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { CheckCircle2, ArrowRight, Loader2, Mail } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useApp } from "@/lib/store";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export function AuthPage() {
   const navigate = useNavigate();
@@ -211,12 +212,18 @@ export function AuthPage() {
                     <Label htmlFor="signup-password">Create Password</Label>
                     <Input id="signup-password" type="password" required />
                   </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox id="terms" required />
+                    <label
+                      htmlFor="terms"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      I agree to the <Link to="/terms" className="text-primary hover:underline">Terms and Conditions</Link>
+                    </label>
+                  </div>
                   <Button className="w-full" type="submit" disabled={isLoading}>
                     {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Create Account"}
                   </Button>
-                  <p className="text-xs text-muted-foreground text-center px-4">
-                    By signing up, you agree to our Terms of Service and Privacy Policy.
-                  </p>
                 </form>
               </TabsContent>
             </Tabs>

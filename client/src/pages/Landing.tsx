@@ -4,8 +4,10 @@ import { ATSScanner } from "@/components/home/ATSScanner";
 import { Pricing } from "@/components/home/Pricing";
 import { ResumeComparison } from "@/components/home/ResumeComparison";
 import { TemplateGallery } from "@/components/home/TemplateGallery";
+import { HowItWorks, WhyChooseUs, ContactSection } from "@/components/home/ContentSections";
 import { Card, CardContent } from "@/components/ui/card";
 import { Star } from "lucide-react";
+import { Link } from "react-router-dom";
 
 function TrustSection() {
   return (
@@ -51,18 +53,46 @@ export function LandingPage() {
       <main>
         <Hero />
         <TrustSection />
+        <WhyChooseUs />
+        <HowItWorks />
         <ResumeComparison />
         <TemplateGallery />
         <ATSScanner />
         <Pricing />
+        <ContactSection />
       </main>
-      <footer className="bg-secondary py-12 border-t" id="contact">
-        <div className="container px-4 text-center text-muted-foreground text-sm">
-          <p>© 2024 ProResumes.ca. All rights reserved.</p>
-          <div className="mt-4 flex justify-center gap-4 text-xs">
-            <a href="#" className="hover:underline">Privacy Policy</a>
-            <a href="#" className="hover:underline">Terms of Service</a>
-            <a href="#" className="hover:underline">Contact Support</a>
+      <footer className="bg-secondary py-16 border-t">
+        <div className="container mx-auto px-4">
+          <div className="grid md:grid-cols-4 gap-8 mb-12">
+            <div className="col-span-1 md:col-span-2">
+              <h3 className="text-xl font-bold font-display text-primary mb-4">ResumePro</h3>
+              <p className="text-sm text-muted-foreground max-w-xs">
+                Canada's leading resume writing service. We combine expert writers with ATS technology to help you land your dream job in Toronto, Vancouver, Montreal, and beyond.
+              </p>
+            </div>
+            <div>
+              <h4 className="font-bold mb-4">Legal</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><Link to="/privacy" className="hover:text-primary">Privacy Policy</Link></li>
+                <li><Link to="/terms" className="hover:text-primary">Terms & Conditions</Link></li>
+                <li><Link to="/cookie-policy" className="hover:text-primary">Cookie Policy</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-bold mb-4">Support</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><a href="#contact" className="hover:text-primary">Contact Us</a></li>
+                <li><a href="#" className="hover:text-primary">FAQ</a></li>
+                <li><Link to="/login" className="hover:text-primary">Client Login</Link></li>
+              </ul>
+            </div>
+          </div>
+          
+          <div className="pt-8 border-t flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-muted-foreground">
+            <p>© 2024 ProResumes.ca. All rights reserved.</p>
+            <div className="flex gap-4">
+              <span>Made with ❤️ in Canada</span>
+            </div>
           </div>
         </div>
       </footer>
