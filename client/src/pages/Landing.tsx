@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { FOMOPopup } from "@/components/FOMOPopup";
+import { LiveChatWidget } from "@/components/LiveChatWidget";
 
 function TrustSection() {
   return (
@@ -51,6 +52,7 @@ export function LandingPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <FOMOPopup />
+      <LiveChatWidget />
       <Navbar />
       <main>
         <Hero />
