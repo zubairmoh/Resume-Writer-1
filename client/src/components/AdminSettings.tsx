@@ -27,10 +27,10 @@ export function AdminSettings() {
       {/* Stripe Integration */}
       <Card>
         <CardHeader>
-          <CardTitle>Stripe Integration</CardTitle>
-          <CardDescription>Configure payment processing</CardDescription>
+          <CardTitle>Payment Gateways</CardTitle>
+          <CardDescription>Configure Stripe and PayPal</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="stripe">Stripe API Key (Publishable)</Label>
             <Input
@@ -39,12 +39,24 @@ export function AdminSettings() {
               value={formData.stripeKey}
               onChange={(e) => setFormData({ ...formData, stripeKey: e.target.value })}
             />
-            <p className="text-xs text-muted-foreground">
-              Get your key from{" "}
-              <a href="#" className="text-primary hover:underline">
-                Stripe Dashboard
-              </a>
-            </p>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="paypal-client">PayPal Client ID</Label>
+            <Input
+              id="paypal-client"
+              placeholder="Sb-..."
+              onChange={() => {}} // Mock
+            />
+          </div>
+           <div className="space-y-2">
+            <Label htmlFor="paypal-secret">PayPal Secret</Label>
+            <Input
+              id="paypal-secret"
+              type="password"
+              placeholder="Ep-..."
+              onChange={() => {}} // Mock
+            />
           </div>
         </CardContent>
       </Card>

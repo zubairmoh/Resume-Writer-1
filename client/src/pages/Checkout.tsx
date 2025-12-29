@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { Check, CreditCard, Lock, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "@/lib/store";
+import { toast } from "@/hooks/use-toast";
 
 export function CheckoutPage() {
   const navigate = useNavigate();
@@ -146,7 +147,10 @@ export function CheckoutPage() {
                 </div>
 
                 <div className="space-y-2">
-                   <div className="flex items-center justify-between p-4 border rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
+                   <div 
+                     className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors ${isLoading ? 'opacity-50' : 'hover:bg-slate-50'}`}
+                     onClick={() => !isLoading && toast({ title: "Selected Credit Card", description: "You can proceed with payment." })}
+                   >
                       <div className="flex items-center gap-3">
                          <div className="w-4 h-4 rounded-full border border-primary flex items-center justify-center">
                             <div className="w-2 h-2 rounded-full bg-primary" />
@@ -154,9 +158,20 @@ export function CheckoutPage() {
                          <span className="font-medium">Credit Card</span>
                       </div>
                       <div className="flex gap-2">
-                         {/* Mock Icons */}
-                         <div className="w-8 h-5 bg-slate-200 rounded" />
-                         <div className="w-8 h-5 bg-slate-200 rounded" />
+                         <CreditCard className="w-5 h-5 text-slate-400" />
+                      </div>
+                   </div>
+
+                   <div 
+                     className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors ${isLoading ? 'opacity-50' : 'hover:bg-slate-50'}`}
+                     onClick={() => !isLoading && toast({ title: "Selected PayPal", description: "PayPal integration active." })}
+                   >
+                      <div className="flex items-center gap-3">
+                         <div className="w-4 h-4 rounded-full border border-muted-foreground flex items-center justify-center" />
+                         <span className="font-medium">PayPal</span>
+                      </div>
+                      <div className="flex gap-2 font-bold text-blue-700 italic">
+                         PayPal
                       </div>
                    </div>
                 </div>

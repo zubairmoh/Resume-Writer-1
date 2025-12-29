@@ -8,6 +8,7 @@ import { HowItWorks, WhyChooseUs, ContactSection } from "@/components/home/Conte
 import { Card, CardContent } from "@/components/ui/card";
 import { Star } from "lucide-react";
 import { Link } from "react-router-dom";
+import { FOMOPopup } from "@/components/FOMOPopup";
 
 function TrustSection() {
   return (
@@ -49,6 +50,7 @@ function TrustSection() {
 export function LandingPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <FOMOPopup />
       <Navbar />
       <main>
         <Hero />

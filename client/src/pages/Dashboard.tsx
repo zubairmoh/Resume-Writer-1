@@ -178,8 +178,9 @@ export function DashboardPage() {
 
         <div className="flex-1 p-6 max-w-5xl mx-auto w-full">
           <Tabs defaultValue="order" className="h-full flex flex-col">
-            <TabsList className="w-full max-w-2xl grid grid-cols-5 mb-6 mx-auto md:mx-0">
+            <TabsList className="w-full max-w-2xl grid grid-cols-6 mb-6 mx-auto md:mx-0">
               <TabsTrigger value="order">My Order</TabsTrigger>
+              <TabsTrigger value="documents">Docs</TabsTrigger>
               <TabsTrigger value="preview">Live Preview</TabsTrigger>
               <TabsTrigger value="targeting">Targeting</TabsTrigger>
               <TabsTrigger value="tracker">Job Tracker</TabsTrigger>
@@ -324,6 +325,57 @@ export function DashboardPage() {
                   </Card>
                 </div>
               </div>
+            </TabsContent>
+
+            <TabsContent value="documents" className="flex-1">
+              <Card>
+                <CardHeader>
+                   <CardTitle>Document Uploads</CardTitle>
+                   <CardDescription>Upload your current resume, cover letter, and any other helpful documents for your writer.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                   <div className="border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center text-center hover:bg-secondary/20 transition-colors cursor-pointer" onClick={() => toast({ title: "Upload Started", description: "File upload simulation started." })}>
+                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                        <Upload className="w-6 h-6 text-primary" />
+                      </div>
+                      <h3 className="font-semibold mb-1">Click to upload or drag and drop</h3>
+                      <p className="text-sm text-muted-foreground mb-4">PDF, DOCX, TXT up to 10MB</p>
+                      <Button>Select Files</Button>
+                   </div>
+
+                   <div className="space-y-4">
+                      <h4 className="font-medium text-sm">Uploaded Files</h4>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between p-3 border rounded-lg">
+                           <div className="flex items-center gap-3">
+                              <FileText className="w-8 h-8 text-blue-500" />
+                              <div>
+                                 <p className="text-sm font-medium">old_resume_2023.pdf</p>
+                                 <p className="text-xs text-muted-foreground">Uploaded Dec 25, 2024</p>
+                              </div>
+                           </div>
+                           <Button size="icon" variant="ghost" className="text-red-500"><Trash2 className="w-4 h-4" /></Button>
+                        </div>
+                         <div className="flex items-center justify-between p-3 border rounded-lg">
+                           <div className="flex items-center gap-3">
+                              <FileText className="w-8 h-8 text-blue-500" />
+                              <div>
+                                 <p className="text-sm font-medium">job_description.txt</p>
+                                 <p className="text-xs text-muted-foreground">Uploaded Dec 25, 2024</p>
+                              </div>
+                           </div>
+                           <Button size="icon" variant="ghost" className="text-red-500"><Trash2 className="w-4 h-4" /></Button>
+                        </div>
+                      </div>
+                   </div>
+
+                   <div className="space-y-2">
+                      <Label htmlFor="notes">Notes for Writer</Label>
+                      <Textarea id="notes" placeholder="Any specific instructions or things you want to highlight..." />
+                      <Button variant="outline" onClick={() => toast({ title: "Notes Saved", description: "Your notes have been shared with the writer." })}>Save Notes</Button>
+                   </div>
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="preview" className="flex-1 h-[800px]">

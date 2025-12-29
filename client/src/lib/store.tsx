@@ -17,6 +17,15 @@ interface Writer {
   specialties: string[];
 }
 
+export interface Lead {
+  id: string;
+  email: string;
+  date: string;
+  score: number;
+  status: "New" | "Contacted" | "Converted" | "Unsubscribed" | "Followed Up";
+  assignedWriterId?: string;
+}
+
 interface Order {
   id: string;
   tier: "Entry" | "Professional" | "Executive";
@@ -100,12 +109,25 @@ interface AppContextType {
   revisions: RevisionRequest[];
   addRevisionRequest: (req: Omit<RevisionRequest, "id" | "status" | "timestamp">) => void;
   resolveRevision: (id: string) => void;
+  leads: Lead[];
+  addLead: (lead: Lead) => void;
+  updateLeadStatus: (id: string, status: Lead["status"]) => void;
+  assignLeadToWriter: (id: string, writerId: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  
+  const [leads, setLeads] = useState<Lead[]>([
+    { id: "1", email: "alex.smith@example.com", date: "2024-12-29", score: 85, status: "New" },
+    { id: "2", email: "sarah.jones@gmail.com", date: "2024-12-28", score: 45, status: "Followed Up", assignedWriterId: "WR-001" },
+    { id: "3", email: "mike.chen@outlook.com", date: "2024-12-28", score: 92, status: "Converted" },
+    { id: "4", email: "emily.wilson@yahoo.ca", date: "2024-12-27", score: 60, status: "New" },
+    { id: "5", email: "david.lee@techcorp.com", date: "2024-12-27", score: 78, status: "Unsubscribed" },
+  ]);
+
   const [writers, setWriters] = useState<Writer[]>([
     { id: "WR-001", name: "Sarah Jenkins", email: "sarah@proresumes.ca", activeOrders: 2, rating: 4.9, specialties: ["Tech", "Executive"] },
     { id: "WR-002", name: "Michael Chen", email: "michael@proresumes.ca", activeOrders: 1, rating: 4.8, specialties: ["Finance", "Entry Level"] },
@@ -295,6 +317,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setRevisions(prev => prev.map(r => r.id === id ? { ...r, status: "resolved" } : r));
   };
 
+  const addLead = (lead: Lead) => {
+    setLeads(prev => [...prev, lead]);
+  };
+
+  const updateLeadStatus = (id: string, status: Lead["status"]) => {
+    setLeads(prev => prev.map(l => l.id === id ? { ...l, status } : l));
+  };
+
+  const assignLeadToWriter = (id: string, writerId: string) => {
+    setLeads(prev => prev.map(l => l.id === id ? { ...l, assignedWriterId: writerId } : l));
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -322,6 +356,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         revisions,
         addRevisionRequest,
         resolveRevision,
+        leads,
+        addLead,
+        updateLeadStatus,
+        assignLeadToWriter,
       }}
     >
       {children}

@@ -17,17 +17,9 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 
-// Mock Leads Data
-const leads = [
-  { id: 1, email: "alex.smith@example.com", date: "2024-12-29", score: 85, status: "New" },
-  { id: 2, email: "sarah.jones@gmail.com", date: "2024-12-28", score: 45, status: "Followed Up" },
-  { id: 3, email: "mike.chen@outlook.com", date: "2024-12-28", score: 92, status: "Converted" },
-  { id: 4, email: "emily.wilson@yahoo.ca", date: "2024-12-27", score: 60, status: "New" },
-  { id: 5, email: "david.lee@techcorp.com", date: "2024-12-27", score: 78, status: "Unsubscribed" },
-];
-
+// AdminPage Component
 export function AdminPage() {
-  const { user, logout, orders, writers, assignWriter, releaseEscrow, messages, addWriter, updateWriter, deleteWriter } = useApp();
+  const { user, logout, orders, writers, assignWriter, releaseEscrow, messages, addWriter, updateWriter, deleteWriter, leads, updateLeadStatus, assignLeadToWriter } = useApp();
   const navigate = useNavigate();
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
   
@@ -321,11 +313,14 @@ export function AdminPage() {
                     <TableHead>Date Captured</TableHead>
                     <TableHead>ATS Score</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Assigned To</TableHead>
                     <TableHead className="text-right">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {leads.map((lead) => (
+                  {leads.map((lead) => {
+                     const assignedWriter = writers.find(w => w.id === lead.assignedWriterId);
+                     return (
                     <TableRow key={lead.id}>
                       <TableCell className="font-medium">{lead.email}</TableCell>
                       <TableCell>{lead.date}</TableCell>
@@ -335,13 +330,45 @@ export function AdminPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline">{lead.status}</Badge>
+                        <Select 
+                          defaultValue={lead.status} 
+                          onValueChange={(val: any) => updateLeadStatus(lead.id, val)}
+                        >
+                          <SelectTrigger className="w-[130px] h-8">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="New">New</SelectItem>
+                            <SelectItem value="Contacted">Contacted</SelectItem>
+                            <SelectItem value="Followed Up">Followed Up</SelectItem>
+                            <SelectItem value="Converted">Converted</SelectItem>
+                            <SelectItem value="Unsubscribed">Unsubscribed</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                         <Select 
+                          defaultValue={lead.assignedWriterId || "unassigned"} 
+                          onValueChange={(val) => assignLeadToWriter(lead.id, val === "unassigned" ? "" : val)}
+                        >
+                          <SelectTrigger className="w-[150px] h-8">
+                            <SelectValue placeholder="Unassigned" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="unassigned">Unassigned</SelectItem>
+                            {writers.map(w => (
+                              <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </TableCell>
                       <TableCell className="text-right">
-                         <Button size="sm" variant="ghost">Contact</Button>
+                         <Button size="sm" variant="ghost" onClick={() => toast({ title: "Email Sent", description: `Follow-up email sent to ${lead.email}` })}>
+                           <MessageSquare className="w-4 h-4" />
+                         </Button>
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )})}
                 </TableBody>
               </Table>
             </CardContent>
