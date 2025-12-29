@@ -18,6 +18,14 @@ export function Navbar() {
           ResumePro
         </Link>
 
+        <div className="hidden md:flex items-center gap-6 text-sm font-medium">
+          <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">Packages & Prices</a>
+          <a href="#how-it-works" className="text-muted-foreground hover:text-foreground transition-colors">How it Works</a>
+          <a href="#ats-scanner" className="text-muted-foreground hover:text-foreground transition-colors">Free Resume Review</a>
+          <a href="#testimonials" className="text-muted-foreground hover:text-foreground transition-colors">Testimonials</a>
+          <a href="#contact" className="text-muted-foreground hover:text-foreground transition-colors">Contact Us</a>
+        </div>
+
         <div className="flex items-center gap-4">
           {user && <NotificationBell />}
           {user ? (

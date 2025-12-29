@@ -9,7 +9,7 @@ import { Star } from "lucide-react";
 
 function TrustSection() {
   return (
-    <section className="py-12 bg-secondary/20 border-y">
+    <section className="py-12 bg-secondary/20 border-y" id="testimonials">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center items-center opacity-70 grayscale hover:grayscale-0 transition-all">
           {/* Mock Logos - In real app use SVG/Images */}
@@ -56,7 +56,7 @@ export function LandingPage() {
         <ATSScanner />
         <Pricing />
       </main>
-      <footer className="bg-secondary py-12 border-t">
+      <footer className="bg-secondary py-12 border-t" id="contact">
         <div className="container px-4 text-center text-muted-foreground text-sm">
           <p>© 2024 ProResumes.ca. All rights reserved.</p>
           <div className="mt-4 flex justify-center gap-4 text-xs">
