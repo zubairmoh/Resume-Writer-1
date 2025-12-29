@@ -9,13 +9,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AdminDocuments } from "@/components/AdminDocuments";
 import { AdminSettings } from "@/components/AdminSettings";
-import { Settings, Users, Briefcase, Plus, Trash2, Edit2, MessageSquare, DollarSign, PieChart, TrendingUp, AlertCircle } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "@/hooks/use-toast";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Progress } from "@/components/ui/progress";
+import { Settings, Users, Briefcase, Plus, Trash2, Edit2, MessageSquare, DollarSign, PieChart, TrendingUp, AlertCircle, FileText } from "lucide-react";
+
+// Mock Leads Data
+const leads = [
+  { id: 1, email: "alex.smith@example.com", date: "2024-12-29", score: 85, status: "New" },
+  { id: 2, email: "sarah.jones@gmail.com", date: "2024-12-28", score: 45, status: "Followed Up" },
+  { id: 3, email: "mike.chen@outlook.com", date: "2024-12-28", score: 92, status: "Converted" },
+  { id: 4, email: "emily.wilson@yahoo.ca", date: "2024-12-27", score: 60, status: "New" },
+  { id: 5, email: "david.lee@techcorp.com", date: "2024-12-27", score: 78, status: "Unsubscribed" },
+];
 
 export function AdminPage() {
   const { user, logout, orders, writers, assignWriter, releaseEscrow, messages, addWriter, updateWriter, deleteWriter } = useApp();
@@ -27,109 +30,27 @@ export function AdminPage() {
   const [isWriterModalOpen, setIsWriterModalOpen] = useState(false);
   const [writerForm, setWriterForm] = useState({ name: "", email: "", specialties: "", rating: "5.0" });
   
-  const order = selectedOrder ? orders.find(o => o.id === selectedOrder) : null;
+  const order = selectedOrder && selectedOrder !== "settings" ? orders.find(o => o.id === selectedOrder) : null;
   const orderMessages = order ? messages.filter(m => m.orderId === order.id).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()) : [];
 
-  // Financial Calculations
-  const totalEscrowHeld = orders.filter(o => o.escrowStatus === "held").reduce((acc, curr) => acc + curr.total, 0);
-  const totalReleased = orders.filter(o => o.escrowStatus === "released").reduce((acc, curr) => acc + curr.total, 0);
-  const totalRefunded = orders.filter(o => o.escrowStatus === "refunded").reduce((acc, curr) => acc + curr.total, 0);
-
-  useEffect(() => {
-    if (!user || user.role !== "admin") {
-      navigate("/login");
-    }
-  }, [user, navigate]);
-
-  if (!user || user.role !== "admin") {
-    return null;
-  }
-
-  const handleAssignWriter = (writerId: string) => {
-    if (selectedOrder) {
-      assignWriter(selectedOrder, writerId);
-      toast({
-        title: "Writer Assigned",
-        description: "The order has been assigned successfully.",
-      });
-    }
-  };
-
-  const handleReleaseEscrow = (orderId: string) => {
-    if (confirm("Are you sure you want to release funds to the writer? This cannot be undone.")) {
-      releaseEscrow(orderId);
-      toast({
-        title: "Funds Released",
-        description: "Payment has been released from escrow.",
-      });
-    }
-  };
-
-  // Writer Management Handlers
-  const handleOpenWriterModal = (writerId?: string) => {
-    if (writerId) {
-      const writer = writers.find(w => w.id === writerId);
-      if (writer) {
-        setEditingWriter(writerId);
-        setWriterForm({
-          name: writer.name,
-          email: writer.email,
-          specialties: writer.specialties.join(", "),
-          rating: writer.rating.toString()
-        });
-      }
-    } else {
-      setEditingWriter(null);
-      setWriterForm({ name: "", email: "", specialties: "", rating: "5.0" });
-    }
-    setIsWriterModalOpen(true);
-  };
-
-  const handleSaveWriter = (e: React.FormEvent) => {
-    e.preventDefault();
-    const specialtiesArray = writerForm.specialties.split(",").map(s => s.trim()).filter(Boolean);
-    const ratingNum = parseFloat(writerForm.rating) || 5.0;
-
-    if (editingWriter) {
-      updateWriter(editingWriter, {
-        name: writerForm.name,
-        email: writerForm.email,
-        specialties: specialtiesArray,
-        rating: ratingNum
-      });
-      toast({ title: "Writer Updated", description: "Writer details saved successfully." });
-    } else {
-      addWriter({
-        id: `WR-${Date.now()}`,
-        activeOrders: 0,
-        name: writerForm.name,
-        email: writerForm.email,
-        specialties: specialtiesArray,
-        rating: ratingNum
-      });
-      toast({ title: "Writer Added", description: "New writer added to the team." });
-    }
-    setIsWriterModalOpen(false);
-  };
-
-  const handleDeleteWriter = (id: string) => {
-    if (confirm("Are you sure you want to delete this writer?")) {
-      deleteWriter(id);
-      toast({ title: "Writer Deleted", description: "Writer removed from the system." });
-    }
-  };
+  // ... (rest of state)
 
   return (
     <div className="min-h-screen bg-background p-8">
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold font-display text-primary">Admin Dashboard</h1>
-          <p className="text-muted-foreground">Manage client orders and assignments.</p>
+          <p className="text-muted-foreground">Manage client orders, writers, and leads.</p>
         </div>
-        <Button variant="outline" onClick={() => { logout(); navigate("/"); }}>Logout</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setSelectedOrder("settings")}>
+            <Settings className="w-4 h-4 mr-2" /> Settings
+          </Button>
+          <Button variant="outline" onClick={() => { logout(); navigate("/"); }}>Logout</Button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Active Orders</CardTitle>
@@ -144,6 +65,14 @@ export function AdminPage() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{writers.length}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">New Leads</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-blue-600">{leads.filter(l => l.status === "New").length}</div>
           </CardContent>
         </Card>
         <Card>
@@ -163,6 +92,9 @@ export function AdminPage() {
           </TabsTrigger>
           <TabsTrigger value="writers" className="flex items-center gap-2">
             <Users className="w-4 h-4" /> Writers
+          </TabsTrigger>
+          <TabsTrigger value="leads" className="flex items-center gap-2">
+            <FileText className="w-4 h-4" /> Leads
           </TabsTrigger>
           <TabsTrigger value="financials" className="flex items-center gap-2">
             <DollarSign className="w-4 h-4" /> Financials & Escrow
@@ -274,6 +206,46 @@ export function AdminPage() {
                             <Trash2 className="w-3 h-3" />
                           </Button>
                         </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="leads">
+          <Card>
+            <CardHeader>
+              <CardTitle>Lead Management</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Date Captured</TableHead>
+                    <TableHead>ATS Score</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {leads.map((lead) => (
+                    <TableRow key={lead.id}>
+                      <TableCell className="font-medium">{lead.email}</TableCell>
+                      <TableCell>{lead.date}</TableCell>
+                      <TableCell>
+                        <Badge variant={lead.score > 75 ? "default" : lead.score > 50 ? "secondary" : "destructive"}>
+                          {lead.score}/100
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{lead.status}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                         <Button size="sm" variant="ghost">Contact</Button>
                       </TableCell>
                     </TableRow>
                   ))}
