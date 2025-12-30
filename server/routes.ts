@@ -419,5 +419,26 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/widgets", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const layout = await storage.getWidgetLayout(user.id);
+      res.json(layout?.widgets || null);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching widget layout" });
+    }
+  });
+
+  app.put("/api/widgets", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { widgets } = req.body;
+      const layout = await storage.saveWidgetLayout(user.id, widgets);
+      res.json(layout);
+    } catch (error) {
+      res.status(500).json({ message: "Error saving widget layout" });
+    }
+  });
+
   return httpServer;
 }

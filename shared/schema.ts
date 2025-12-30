@@ -132,3 +132,31 @@ export const insertAdminSettingsSchema = createInsertSchema(adminSettings).omit(
 
 export type InsertAdminSettings = z.infer<typeof insertAdminSettingsSchema>;
 export type AdminSettings = typeof adminSettings.$inferSelect;
+
+export const widgetLayouts = pgTable("widget_layouts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  widgets: jsonb("widgets").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertWidgetLayoutSchema = createInsertSchema(widgetLayouts).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type InsertWidgetLayout = z.infer<typeof insertWidgetLayoutSchema>;
+export type WidgetLayout = typeof widgetLayouts.$inferSelect;
+
+export const widgetConfigSchema = z.object({
+  id: z.string(),
+  type: z.enum(["stats", "chart", "activity", "shortcuts", "orders", "leads", "messages"]),
+  title: z.string(),
+  x: z.number(),
+  y: z.number(),
+  w: z.number(),
+  h: z.number(),
+  visible: z.boolean().default(true),
+});
+
+export type WidgetConfig = z.infer<typeof widgetConfigSchema>;

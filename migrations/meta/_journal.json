@@ -8,6 +8,13 @@
       "when": 1767071909926,
       "tag": "0000_rainy_chamber",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1767095356247,
+      "tag": "0001_married_chronomancer",
+      "breakpoints": true
     }
   ]
 }

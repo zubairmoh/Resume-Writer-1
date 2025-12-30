@@ -8,6 +8,7 @@ import {
   messages,
   documents,
   adminSettings,
+  widgetLayouts,
   type User,
   type InsertUser,
   type Lead,
@@ -20,6 +21,8 @@ import {
   type InsertDocument,
   type AdminSettings,
   type InsertAdminSettings,
+  type WidgetLayout,
+  type InsertWidgetLayout,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -53,6 +56,9 @@ export interface IStorage {
   
   getAdminSettings(): Promise<AdminSettings | undefined>;
   updateAdminSettings(settings: Partial<InsertAdminSettings>): Promise<AdminSettings>;
+  
+  getWidgetLayout(userId: string): Promise<WidgetLayout | undefined>;
+  saveWidgetLayout(userId: string, widgets: any[]): Promise<WidgetLayout>;
 }
 
 const databaseUrl = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
@@ -200,6 +206,26 @@ export class PostgresStorage implements IStorage {
       return result[0];
     } else {
       const result = await db.insert(adminSettings).values(settings).returning();
+      return result[0];
+    }
+  }
+
+  async getWidgetLayout(userId: string): Promise<WidgetLayout | undefined> {
+    const result = await db.select().from(widgetLayouts).where(eq(widgetLayouts.userId, userId)).limit(1);
+    return result[0];
+  }
+
+  async saveWidgetLayout(userId: string, widgets: any[]): Promise<WidgetLayout> {
+    const existing = await this.getWidgetLayout(userId);
+    
+    if (existing) {
+      const result = await db.update(widgetLayouts)
+        .set({ widgets, updatedAt: new Date() })
+        .where(eq(widgetLayouts.id, existing.id))
+        .returning();
+      return result[0];
+    } else {
+      const result = await db.insert(widgetLayouts).values({ userId, widgets }).returning();
       return result[0];
     }
   }
