@@ -22,6 +22,12 @@ export function AdminSettings() {
     businessAddress: "",
     fomoEnabled: true,
     chatWidgetEnabled: true,
+    notificationEmail: "",
+    smtpHost: "",
+    smtpPort: "",
+    smtpUser: "",
+    smtpPass: "",
+    browseNotificationsEnabled: false,
   });
 
   useEffect(() => {
@@ -36,13 +42,23 @@ export function AdminSettings() {
         businessAddress: settings.businessAddress || "",
         fomoEnabled: settings.fomoEnabled ?? true,
         chatWidgetEnabled: settings.chatWidgetEnabled ?? true,
+        notificationEmail: settings.notificationEmail || "",
+        smtpHost: settings.smtpHost || "",
+        smtpPort: settings.smtpPort?.toString() || "",
+        smtpUser: settings.smtpUser || "",
+        smtpPass: settings.smtpPass || "",
+        browseNotificationsEnabled: settings.browseNotificationsEnabled ?? false,
       });
     }
   }, [settings]);
 
   const handleSave = async () => {
     try {
-      await updateSettings.mutateAsync(formData);
+      const dataToSave = {
+        ...formData,
+        smtpPort: formData.smtpPort ? parseInt(formData.smtpPort) : undefined,
+      };
+      await updateSettings.mutateAsync(dataToSave);
       toast({
         title: "Settings saved",
         description: "Your configuration has been updated.",
@@ -179,6 +195,83 @@ export function AdminSettings() {
               checked={formData.chatWidgetEnabled}
               onCheckedChange={(checked) => setFormData({ ...formData, chatWidgetEnabled: checked })}
               data-testid="switch-chat"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Email Notifications</CardTitle>
+          <CardDescription>Configure SMTP settings for email notifications</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="notification-email">Notification Email</Label>
+            <Input
+              id="notification-email"
+              type="email"
+              placeholder="admin@proresumes.ca"
+              value={formData.notificationEmail}
+              onChange={(e) => setFormData({ ...formData, notificationEmail: e.target.value })}
+              data-testid="input-notification-email"
+            />
+            <p className="text-xs text-muted-foreground">Receive notifications about new orders and visitors</p>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="smtp-host">SMTP Host</Label>
+              <Input
+                id="smtp-host"
+                placeholder="smtp.gmail.com"
+                value={formData.smtpHost}
+                onChange={(e) => setFormData({ ...formData, smtpHost: e.target.value })}
+                data-testid="input-smtp-host"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="smtp-port">SMTP Port</Label>
+              <Input
+                id="smtp-port"
+                placeholder="587"
+                value={formData.smtpPort}
+                onChange={(e) => setFormData({ ...formData, smtpPort: e.target.value })}
+                data-testid="input-smtp-port"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="smtp-user">SMTP Username</Label>
+              <Input
+                id="smtp-user"
+                placeholder="your-email@gmail.com"
+                value={formData.smtpUser}
+                onChange={(e) => setFormData({ ...formData, smtpUser: e.target.value })}
+                data-testid="input-smtp-user"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="smtp-pass">SMTP Password</Label>
+              <Input
+                id="smtp-pass"
+                type="password"
+                placeholder="App password"
+                value={formData.smtpPass}
+                onChange={(e) => setFormData({ ...formData, smtpPass: e.target.value })}
+                data-testid="input-smtp-pass"
+              />
+            </div>
+          </div>
+          <div className="flex items-center justify-between pt-4 border-t">
+            <div className="space-y-0.5">
+              <Label>Browse Notifications</Label>
+              <p className="text-sm text-muted-foreground">Get notified when visitors browse your site</p>
+            </div>
+            <Switch
+              checked={formData.browseNotificationsEnabled}
+              onCheckedChange={(checked) => setFormData({ ...formData, browseNotificationsEnabled: checked })}
+              data-testid="switch-browse-notifications"
             />
           </div>
         </CardContent>
