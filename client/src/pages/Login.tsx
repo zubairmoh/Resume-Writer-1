@@ -1,16 +1,17 @@
 import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom"; // Added useNavigate
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { CheckCircle2, Loader2 } from "lucide-react";
-import { Link } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 
 export function LoginPage() {
   const { login } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate(); // Initialize navigation
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({ username: "", password: "" });
 
@@ -26,15 +27,15 @@ export function LoginPage() {
       const user = await login(formData.username, formData.password);
       toast({ title: "Welcome back!", description: `Logged in as ${user.fullName}` });
       
-      setTimeout(() => {
-        if (user.role === "admin") {
-          window.location.href = "/admin";
-        } else if (user.role === "writer") {
-          window.location.href = "/writer";
-        } else {
-          window.location.href = "/dashboard";
-        }
-      }, 100);
+      // IMPROVED REDIRECTION LOGIC
+      if (user.role === "admin") {
+        navigate("/admin");
+      } else if (user.role === "writer") {
+        navigate("/writer");
+      } else {
+        navigate("/dashboard");
+      }
+      
     } catch (error: any) {
       toast({
         variant: "destructive",
