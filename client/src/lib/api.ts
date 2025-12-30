@@ -118,6 +118,15 @@ export const api = {
 
   users: {
     getWriters: (): Promise<User[]> => fetchAPI("/users/writers"),
+    getAdmins: (): Promise<User[]> => fetchAPI("/users/admins"),
+    getClients: (): Promise<User[]> => fetchAPI("/users/clients"),
+    create: (data: {
+      username: string;
+      password: string;
+      email: string;
+      fullName: string;
+      role: string;
+    }) => fetchAPI("/users", { method: "POST", body: JSON.stringify(data) }),
   },
 
   leads: {

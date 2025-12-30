@@ -153,6 +153,56 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/users/admins", isAdmin, async (req, res) => {
+    try {
+      const admins = await storage.getUsersByRole("admin");
+      const adminsWithoutPasswords = admins.map(({ password, ...admin }) => admin);
+      res.json(adminsWithoutPasswords);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching admins" });
+    }
+  });
+
+  app.get("/api/users/clients", isAdmin, async (req, res) => {
+    try {
+      const clients = await storage.getUsersByRole("client");
+      const clientsWithoutPasswords = clients.map(({ password, ...client }) => client);
+      res.json(clientsWithoutPasswords);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching clients" });
+    }
+  });
+
+  app.post("/api/users", isAdmin, async (req, res) => {
+    try {
+      const data = insertUserSchema.parse(req.body);
+      
+      const existingUser = await storage.getUserByUsername(data.username);
+      if (existingUser) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+      
+      const existingEmail = await storage.getUserByEmail(data.email);
+      if (existingEmail) {
+        return res.status(400).json({ message: "Email already exists" });
+      }
+      
+      const hashedPassword = await bcrypt.hash(data.password, 10);
+      const user = await storage.createUser({
+        ...data,
+        password: hashedPassword,
+      });
+      
+      const { password, ...userWithoutPassword } = user;
+      res.status(201).json(userWithoutPassword);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Error creating user" });
+    }
+  });
+
   app.post("/api/leads", async (req, res) => {
     try {
       const data = insertLeadSchema.parse(req.body);
