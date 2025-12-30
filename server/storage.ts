@@ -9,6 +9,8 @@ import {
   documents,
   adminSettings,
   widgetLayouts,
+  addons,
+  orderAddons,
   type User,
   type InsertUser,
   type Lead,
@@ -23,6 +25,10 @@ import {
   type InsertAdminSettings,
   type WidgetLayout,
   type InsertWidgetLayout,
+  type Addon,
+  type InsertAddon,
+  type OrderAddon,
+  type InsertOrderAddon,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -31,6 +37,8 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   getUsersByRole(role: string): Promise<User[]>;
+  getAllUsers(): Promise<User[]>;
+  updateUser(id: string, data: Partial<InsertUser>): Promise<User | undefined>;
   
   createLead(lead: InsertLead): Promise<Lead>;
   getLeads(): Promise<Lead[]>;
@@ -59,6 +67,15 @@ export interface IStorage {
   
   getWidgetLayout(userId: string): Promise<WidgetLayout | undefined>;
   saveWidgetLayout(userId: string, widgets: any[]): Promise<WidgetLayout>;
+  
+  getAddons(): Promise<Addon[]>;
+  getAddon(id: string): Promise<Addon | undefined>;
+  createAddon(addon: InsertAddon): Promise<Addon>;
+  updateAddon(id: string, data: Partial<InsertAddon>): Promise<Addon | undefined>;
+  
+  getOrderAddons(orderId: string): Promise<OrderAddon[]>;
+  createOrderAddon(orderAddon: InsertOrderAddon): Promise<OrderAddon>;
+  updateOrderAddon(id: string, data: Partial<InsertOrderAddon>): Promise<OrderAddon | undefined>;
 }
 
 const databaseUrl = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
@@ -228,6 +245,48 @@ export class PostgresStorage implements IStorage {
       const result = await db.insert(widgetLayouts).values({ userId, widgets }).returning();
       return result[0];
     }
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users).orderBy(desc(users.createdAt));
+  }
+
+  async updateUser(id: string, data: Partial<InsertUser>): Promise<User | undefined> {
+    const result = await db.update(users).set(data).where(eq(users.id, id)).returning();
+    return result[0];
+  }
+
+  async getAddons(): Promise<Addon[]> {
+    return await db.select().from(addons).orderBy(addons.name);
+  }
+
+  async getAddon(id: string): Promise<Addon | undefined> {
+    const result = await db.select().from(addons).where(eq(addons.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createAddon(insertAddon: InsertAddon): Promise<Addon> {
+    const result = await db.insert(addons).values(insertAddon).returning();
+    return result[0];
+  }
+
+  async updateAddon(id: string, data: Partial<InsertAddon>): Promise<Addon | undefined> {
+    const result = await db.update(addons).set(data).where(eq(addons.id, id)).returning();
+    return result[0];
+  }
+
+  async getOrderAddons(orderId: string): Promise<OrderAddon[]> {
+    return await db.select().from(orderAddons).where(eq(orderAddons.orderId, orderId));
+  }
+
+  async createOrderAddon(insertOrderAddon: InsertOrderAddon): Promise<OrderAddon> {
+    const result = await db.insert(orderAddons).values(insertOrderAddon).returning();
+    return result[0];
+  }
+
+  async updateOrderAddon(id: string, data: Partial<InsertOrderAddon>): Promise<OrderAddon | undefined> {
+    const result = await db.update(orderAddons).set(data).where(eq(orderAddons.id, id)).returning();
+    return result[0];
   }
 }
 

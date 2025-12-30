@@ -31,8 +31,15 @@ export interface Order {
   packageType: string;
   status: string;
   price: number;
+  basePrice?: number;
+  customPrice?: number;
+  overrideReason?: string;
+  overrideBy?: string;
+  addons?: any;
+  addonsTotal?: number;
   paymentMethod?: string;
   paymentStatus?: string;
+  paymentIntentId?: string;
   targetJobUrl?: string;
   targetJobTitle?: string;
   additionalInfo?: string;
@@ -77,7 +84,22 @@ export interface AdminSettings {
   businessAddress?: string;
   fomoEnabled?: boolean;
   chatWidgetEnabled?: boolean;
+  notificationEmail?: string;
+  smtpHost?: string;
+  smtpPort?: number;
+  smtpUser?: string;
+  smtpPass?: string;
+  browseNotificationsEnabled?: boolean;
   updatedAt?: string;
+}
+
+export interface Addon {
+  id: string;
+  name: string;
+  description?: string;
+  price: number;
+  isActive?: boolean;
+  createdAt: string;
 }
 
 async function fetchAPI(endpoint: string, options?: RequestInit) {
@@ -173,6 +195,24 @@ export const api = {
     
     updateSettings: (data: Partial<AdminSettings>) =>
       fetchAPI("/admin/settings", { method: "PATCH", body: JSON.stringify(data) }),
+    
+    getUsers: (): Promise<User[]> => fetchAPI("/admin/users"),
+    
+    updateUserRole: (id: string, role: string) =>
+      fetchAPI(`/admin/users/${id}/role`, { method: "PATCH", body: JSON.stringify({ role }) }),
+    
+    getMessages: (orderId?: string): Promise<Message[]> =>
+      fetchAPI(`/admin/messages${orderId ? `?orderId=${orderId}` : ""}`),
+  },
+
+  addons: {
+    getAll: (): Promise<Addon[]> => fetchAPI("/addons"),
+    
+    create: (data: Partial<Addon>) =>
+      fetchAPI("/addons", { method: "POST", body: JSON.stringify(data) }),
+    
+    update: (id: string, data: Partial<Addon>) =>
+      fetchAPI(`/addons/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
   },
 
   widgets: {

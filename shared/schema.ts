@@ -51,8 +51,15 @@ export const orders = pgTable("orders", {
   packageType: text("package_type").notNull(),
   status: text("status").notNull().default('pending'),
   price: integer("price").notNull(),
+  basePrice: integer("base_price"),
+  customPrice: integer("custom_price"),
+  overrideReason: text("override_reason"),
+  overrideBy: varchar("override_by").references(() => users.id),
+  addons: jsonb("addons"),
+  addonsTotal: integer("addons_total").default(0),
   paymentMethod: text("payment_method"),
   paymentStatus: text("payment_status").default('pending'),
+  paymentIntentId: text("payment_intent_id"),
   targetJobUrl: text("target_job_url"),
   targetJobTitle: text("target_job_title"),
   additionalInfo: text("additional_info"),
@@ -122,8 +129,51 @@ export const adminSettings = pgTable("admin_settings", {
   businessAddress: text("business_address"),
   fomoEnabled: boolean("fomo_enabled").default(true),
   chatWidgetEnabled: boolean("chat_widget_enabled").default(true),
+  notificationEmail: text("notification_email"),
+  smtpHost: text("smtp_host"),
+  smtpPort: integer("smtp_port"),
+  smtpUser: text("smtp_user"),
+  smtpPass: text("smtp_pass"),
+  browseNotificationsEnabled: boolean("browse_notifications_enabled").default(false),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+
+export const addons = pgTable("addons", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description"),
+  price: integer("price").notNull(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertAddonSchema = createInsertSchema(addons).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertAddon = z.infer<typeof insertAddonSchema>;
+export type Addon = typeof addons.$inferSelect;
+
+export const orderAddons = pgTable("order_addons", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderId: varchar("order_id").notNull().references(() => orders.id),
+  addonId: varchar("addon_id").notNull().references(() => addons.id),
+  price: integer("price").notNull(),
+  status: text("status").notNull().default('pending'),
+  pushedBy: varchar("pushed_by").references(() => users.id),
+  pushedByRole: text("pushed_by_role"),
+  acceptedAt: timestamp("accepted_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertOrderAddonSchema = createInsertSchema(orderAddons).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertOrderAddon = z.infer<typeof insertOrderAddonSchema>;
+export type OrderAddon = typeof orderAddons.$inferSelect;
 
 export const insertAdminSettingsSchema = createInsertSchema(adminSettings).omit({
   id: true,

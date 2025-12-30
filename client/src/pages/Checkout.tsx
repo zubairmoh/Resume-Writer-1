@@ -1,41 +1,87 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Check, CreditCard, Lock, ShieldCheck } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useApp } from "@/lib/store";
+import { Check, CreditCard, Lock, ShieldCheck, Package } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useCreateOrder } from "@/lib/hooks";
+import { useAuth } from "@/lib/auth";
 import { toast } from "@/hooks/use-toast";
+
+const PACKAGE_PRICES: Record<string, { name: string; price: number; description: string }> = {
+  entry: { name: "Entry", price: 99, description: "Perfect for recent graduates" },
+  professional: { name: "Professional", price: 199, description: "For mid-level professionals" },
+  executive: { name: "Executive", price: 299, description: "For C-suite executives" },
+};
+
+const ADDON_PRICES = {
+  coverLetter: { name: "Cover Letter", price: 50 },
+  linkedin: { name: "LinkedIn Optimization", price: 75 },
+};
 
 export function CheckoutPage() {
   const navigate = useNavigate();
-  const { addOrder } = useApp();
+  const [searchParams] = useSearchParams();
+  const { user, isLoading: authLoading } = useAuth();
+  const createOrder = useCreateOrder();
   const [isLoading, setIsLoading] = useState(false);
 
-  const handlePayment = (e: React.FormEvent) => {
+  const packageType = searchParams.get("package") || "professional";
+  const hasCoverLetter = searchParams.get("coverLetter") === "true";
+  const hasLinkedin = searchParams.get("linkedin") === "true";
+
+  const selectedPackage = PACKAGE_PRICES[packageType] || PACKAGE_PRICES.professional;
+  
+  const addonsTotal = (hasCoverLetter ? ADDON_PRICES.coverLetter.price : 0) + 
+                      (hasLinkedin ? ADDON_PRICES.linkedin.price : 0);
+  const total = selectedPackage.price + addonsTotal;
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate(`/login?redirect=/checkout?package=${packageType}&coverLetter=${hasCoverLetter}&linkedin=${hasLinkedin}`);
+    }
+  }, [user, authLoading, navigate, packageType, hasCoverLetter, hasLinkedin]);
+
+  const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      toast({ title: "Error", description: "Please log in to continue", variant: "destructive" });
+      return;
+    }
+    
     setIsLoading(true);
 
-    // Simulate payment processing
-    setTimeout(() => {
-      // Create a mock order
-      addOrder({
-        id: `ORD-${Math.floor(Math.random() * 10000)}`,
-        tier: "Professional",
-        addOns: { coverLetter: true, linkedin: false },
-        total: 249,
-        status: "Drafting",
-        date: new Date().toISOString().split('T')[0],
-        daysRemaining: 7,
-        escrowStatus: "held"
+    try {
+      const addons = [];
+      if (hasCoverLetter) addons.push({ name: "Cover Letter", price: 50 });
+      if (hasLinkedin) addons.push({ name: "LinkedIn Optimization", price: 75 });
+
+      await createOrder.mutateAsync({
+        clientId: user.id,
+        packageType: selectedPackage.name,
+        price: total,
+        basePrice: selectedPackage.price,
+        addons,
+        addonsTotal,
+        paymentMethod: "card",
+        paymentStatus: "paid",
+        status: "pending",
       });
       
-      setIsLoading(false);
+      toast({ title: "Order Placed!", description: "Your order has been created successfully." });
       navigate("/dashboard");
-    }, 2000);
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to create order. Please try again.", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  if (authLoading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 py-12 px-4">
@@ -55,26 +101,47 @@ export function CheckoutPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="font-medium">Professional Package</h3>
-                  <p className="text-sm text-muted-foreground">For mid-level professionals</p>
+                <div className="flex items-center gap-3">
+                  <Package className="w-5 h-5 text-primary" />
+                  <div>
+                    <h3 className="font-medium">{selectedPackage.name} Package</h3>
+                    <p className="text-sm text-muted-foreground">{selectedPackage.description}</p>
+                  </div>
                 </div>
-                <p className="font-bold">$199.00</p>
+                <p className="font-bold">${selectedPackage.price}.00</p>
               </div>
               
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="font-medium">Cover Letter Add-on</h3>
-                  <p className="text-sm text-muted-foreground">Targeted cover letter</p>
+              {hasCoverLetter && (
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-3">
+                    <Check className="w-5 h-5 text-green-500" />
+                    <div>
+                      <h3 className="font-medium">Cover Letter Add-on</h3>
+                      <p className="text-sm text-muted-foreground">Targeted cover letter</p>
+                    </div>
+                  </div>
+                  <p className="font-bold">$50.00</p>
                 </div>
-                <p className="font-bold">$50.00</p>
-              </div>
+              )}
+              
+              {hasLinkedin && (
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-3">
+                    <Check className="w-5 h-5 text-green-500" />
+                    <div>
+                      <h3 className="font-medium">LinkedIn Optimization</h3>
+                      <p className="text-sm text-muted-foreground">Profile optimization</p>
+                    </div>
+                  </div>
+                  <p className="font-bold">$75.00</p>
+                </div>
+              )}
               
               <Separator />
               
               <div className="flex justify-between items-center text-lg font-bold">
                 <span>Total</span>
-                <span>$249.00</span>
+                <span>${total}.00</span>
               </div>
             </CardContent>
             <CardFooter className="bg-secondary/20 flex flex-col items-start gap-4">
@@ -120,27 +187,27 @@ export function CheckoutPage() {
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label>Cardholder Name</Label>
-                    <Input placeholder="John Doe" required />
+                    <Input placeholder={user?.fullName || "Your name"} required data-testid="input-cardholder-name" />
                   </div>
                   
                   <div className="space-y-2">
                     <Label>Card Number</Label>
                     <div className="relative">
                       <CreditCard className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input placeholder="0000 0000 0000 0000" className="pl-10" required />
+                      <Input placeholder="0000 0000 0000 0000" className="pl-10" required data-testid="input-card-number" />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Expiry Date</Label>
-                      <Input placeholder="MM/YY" required />
+                      <Input placeholder="MM/YY" required data-testid="input-expiry" />
                     </div>
                     <div className="space-y-2">
                       <Label>CVC</Label>
                       <div className="relative">
                         <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        <Input placeholder="123" className="pl-10" required />
+                        <Input placeholder="123" className="pl-10" required data-testid="input-cvc" />
                       </div>
                     </div>
                   </div>
@@ -148,11 +215,10 @@ export function CheckoutPage() {
 
                 <div className="space-y-2">
                    <div 
-                     className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors ${isLoading ? 'opacity-50' : 'hover:bg-slate-50'}`}
-                     onClick={() => !isLoading && toast({ title: "Selected Credit Card", description: "You can proceed with payment." })}
+                     className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors bg-primary/5 border-primary`}
                    >
                       <div className="flex items-center gap-3">
-                         <div className="w-4 h-4 rounded-full border border-primary flex items-center justify-center">
+                         <div className="w-4 h-4 rounded-full border-2 border-primary flex items-center justify-center">
                             <div className="w-2 h-2 rounded-full bg-primary" />
                          </div>
                          <span className="font-medium">Credit Card</span>
@@ -163,8 +229,7 @@ export function CheckoutPage() {
                    </div>
 
                    <div 
-                     className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors ${isLoading ? 'opacity-50' : 'hover:bg-slate-50'}`}
-                     onClick={() => !isLoading && toast({ title: "Selected PayPal", description: "PayPal integration active." })}
+                     className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors hover:bg-slate-50 opacity-50`}
                    >
                       <div className="flex items-center gap-3">
                          <div className="w-4 h-4 rounded-full border border-muted-foreground flex items-center justify-center" />
@@ -176,13 +241,24 @@ export function CheckoutPage() {
                    </div>
                 </div>
 
-                <Button className="w-full text-lg h-12" type="submit" disabled={isLoading}>
-                  {isLoading ? "Processing..." : "Pay $249.00"}
+                <Button 
+                  type="submit" 
+                  className="w-full h-12 text-lg font-semibold"
+                  disabled={isLoading}
+                  data-testid="button-pay-now"
+                >
+                  {isLoading ? (
+                    <span className="flex items-center gap-2">
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Processing...
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      <Lock className="w-4 h-4" />
+                      Pay ${total}.00
+                    </span>
+                  )}
                 </Button>
-                
-                <p className="text-center text-xs text-muted-foreground">
-                  By confirming your payment, you allow ProResumes.ca to charge your card for this payment and future payments in accordance with our terms.
-                </p>
               </form>
             </CardContent>
           </Card>

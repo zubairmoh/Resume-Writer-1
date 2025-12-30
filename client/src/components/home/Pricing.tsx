@@ -140,7 +140,12 @@ export function Pricing() {
                     variant={tier.popular ? "default" : "outline"}
                     onClick={(e) => {
                       e.stopPropagation();
-                      navigate("/login");
+                      const params = new URLSearchParams({
+                        package: tier.name.toLowerCase(),
+                        coverLetter: addOns.coverLetter.toString(),
+                        linkedin: addOns.linkedin.toString(),
+                      });
+                      navigate(`/checkout?${params.toString()}`);
                     }}
                     data-testid={`button-get-started-${tier.name.toLowerCase()}`}
                   >

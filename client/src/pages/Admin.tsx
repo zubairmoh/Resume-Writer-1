@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
-import { useLeads, useUpdateLead, useOrders, useUpdateOrder, useWriters, useCreateUser } from "@/lib/hooks";
+import { useLeads, useUpdateLead, useOrders, useUpdateOrder, useWriters, useCreateUser, useClients, useAllUsers, useUpdateUserRole, useAdminMessages } from "@/lib/hooks";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -19,12 +19,126 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 
+// AdminChatLogs Component
+function AdminChatLogs({ orders }: { orders: any[] }) {
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const { data: messages = [], isLoading } = useAdminMessages(selectedOrderId || undefined);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-4 items-center">
+        <Select value={selectedOrderId || ""} onValueChange={(val) => setSelectedOrderId(val || null)}>
+          <SelectTrigger className="w-[300px]">
+            <SelectValue placeholder="Select an order to view chat history" />
+          </SelectTrigger>
+          <SelectContent>
+            {orders.map((order: any) => (
+              <SelectItem key={order.id} value={order.id}>
+                Order #{order.id.slice(0, 8)} - {order.packageType}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {selectedOrderId ? (
+        <ScrollArea className="h-[400px] border rounded-lg p-4">
+          {isLoading ? (
+            <div className="flex items-center justify-center h-full">
+              <Loader2 className="w-6 h-6 animate-spin" />
+            </div>
+          ) : messages.length === 0 ? (
+            <div className="text-center text-muted-foreground py-8">No messages for this order</div>
+          ) : (
+            <div className="space-y-3">
+              {messages.map((msg: any) => (
+                <div key={msg.id} className="p-3 border rounded-lg">
+                  <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                    <span className="font-medium">User ID: {msg.senderId.slice(0, 8)}</span>
+                    <span>{new Date(msg.createdAt).toLocaleString()}</span>
+                  </div>
+                  <p className="text-sm">{msg.content}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </ScrollArea>
+      ) : (
+        <div className="text-center text-muted-foreground py-8 border rounded-lg">
+          Select an order above to view its chat history
+        </div>
+      )}
+    </div>
+  );
+}
+
+// AdminUserRoles Component
+function AdminUserRoles() {
+  const { data: users = [], isLoading } = useAllUsers();
+  const updateRole = useUpdateUserRole();
+  const { user: currentUser } = useAuth();
+
+  const handleRoleChange = async (userId: string, newRole: string) => {
+    try {
+      await updateRole.mutateAsync({ id: userId, role: newRole });
+      toast({ title: "Role Updated", description: "User role has been updated successfully." });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to update user role.", variant: "destructive" });
+    }
+  };
+
+  if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin" /></div>;
+
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Name</TableHead>
+          <TableHead>Email</TableHead>
+          <TableHead>Current Role</TableHead>
+          <TableHead>Change Role</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {users.map((user: any) => (
+          <TableRow key={user.id}>
+            <TableCell className="font-medium">{user.fullName}</TableCell>
+            <TableCell>{user.email}</TableCell>
+            <TableCell>
+              <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
+                {user.role}
+              </Badge>
+            </TableCell>
+            <TableCell>
+              <Select 
+                value={user.role} 
+                onValueChange={(val) => handleRoleChange(user.id, val)}
+                disabled={user.id === currentUser?.id}
+              >
+                <SelectTrigger className="w-[130px] h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="client">Client</SelectItem>
+                  <SelectItem value="writer">Writer</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+}
+
 // AdminPage Component
 export function AdminPage() {
   const { user: authUser, logout, isLoading: authLoading } = useAuth();
   const { data: leads = [], isLoading: leadsLoading } = useLeads();
   const { data: orders = [], isLoading: ordersLoading } = useOrders();
   const { data: writers = [], isLoading: writersLoading } = useWriters();
+  const { data: clients = [] } = useClients();
   const updateLead = useUpdateLead();
   const updateOrder = useUpdateOrder();
   const createUser = useCreateUser();
@@ -188,18 +302,24 @@ export function AdminPage() {
       </div>
 
       <Tabs defaultValue="orders">
-        <TabsList className="mb-6">
+        <TabsList className="mb-6 flex-wrap">
           <TabsTrigger value="orders" className="flex items-center gap-2">
             <Briefcase className="w-4 h-4" /> Orders
           </TabsTrigger>
           <TabsTrigger value="writers" className="flex items-center gap-2">
             <Users className="w-4 h-4" /> Writers
           </TabsTrigger>
+          <TabsTrigger value="clients" className="flex items-center gap-2">
+            <Users className="w-4 h-4" /> Clients
+          </TabsTrigger>
           <TabsTrigger value="leads" className="flex items-center gap-2">
             <FileText className="w-4 h-4" /> Leads
           </TabsTrigger>
-          <TabsTrigger value="live-chat" className="flex items-center gap-2">
-            <MessageCircle className="w-4 h-4" /> Live Visitors
+          <TabsTrigger value="chat-logs" className="flex items-center gap-2">
+            <MessageCircle className="w-4 h-4" /> Chat Logs
+          </TabsTrigger>
+          <TabsTrigger value="users" className="flex items-center gap-2">
+            <Settings className="w-4 h-4" /> User Roles
           </TabsTrigger>
           <TabsTrigger value="financials" className="flex items-center gap-2">
             <DollarSign className="w-4 h-4" /> Financials & Escrow
@@ -471,6 +591,69 @@ export function AdminPage() {
                   })}
                 </TableBody>
               </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="clients">
+          <Card>
+            <CardHeader>
+              <CardTitle>Client Management</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Joined</TableHead>
+                    <TableHead>Orders</TableHead>
+                    <TableHead>Total Spent</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {clients.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No clients yet</TableCell>
+                    </TableRow>
+                  ) : clients.map((client: any) => {
+                    const clientOrders = orders.filter((o: any) => o.clientId === client.id);
+                    const totalSpent = clientOrders.reduce((acc: number, o: any) => acc + (o.price || 0), 0);
+                    return (
+                      <TableRow key={client.id}>
+                        <TableCell className="font-medium">{client.fullName}</TableCell>
+                        <TableCell>{client.email}</TableCell>
+                        <TableCell>{new Date(client.createdAt).toLocaleDateString()}</TableCell>
+                        <TableCell>{clientOrders.length}</TableCell>
+                        <TableCell>${totalSpent}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="chat-logs">
+          <Card>
+            <CardHeader>
+              <CardTitle>Chat History</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <AdminChatLogs orders={orders} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="users">
+          <Card>
+            <CardHeader>
+              <CardTitle>User Role Management</CardTitle>
+              <CardDescription>Manage user roles. Promote clients or writers to admin status.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AdminUserRoles />
             </CardContent>
           </Card>
         </TabsContent>

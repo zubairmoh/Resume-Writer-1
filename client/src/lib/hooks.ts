@@ -187,3 +187,56 @@ export function useSaveWidgetLayout() {
     },
   });
 }
+
+export function useAllUsers() {
+  return useQuery({
+    queryKey: ["admin", "users"],
+    queryFn: () => api.admin.getUsers(),
+  });
+}
+
+export function useUpdateUserRole() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, role }: { id: string; role: string }) => api.admin.updateUserRole(id, role),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+      queryClient.invalidateQueries({ queryKey: ["writers"] });
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
+    },
+  });
+}
+
+export function useAdminMessages(orderId?: string) {
+  return useQuery({
+    queryKey: ["admin", "messages", orderId],
+    queryFn: () => api.admin.getMessages(orderId),
+  });
+}
+
+export function useAddons() {
+  return useQuery({
+    queryKey: ["addons"],
+    queryFn: () => api.addons.getAll(),
+  });
+}
+
+export function useCreateAddon() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => api.addons.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["addons"] });
+    },
+  });
+}
+
+export function useUpdateAddon() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => api.addons.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["addons"] });
+    },
+  });
+}

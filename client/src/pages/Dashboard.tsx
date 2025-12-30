@@ -54,12 +54,9 @@ export function DashboardPage() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isRevisionOpen, setIsRevisionOpen] = useState(false);
   const [revisionComments, setRevisionComments] = useState("");
-  const [profileData, setProfileData] = useState({ name: "John Doe", email: "" });
+  const [profileData, setProfileData] = useState({ name: "", email: "" });
 
-  const [targetJobs, setTargetJobs] = useState([
-    { id: 1, title: "Senior Software Engineer", company: "Shopify", url: "https://shopify.com/careers/..." },
-    { id: 2, title: "Full Stack Developer", company: "Wealthsimple", url: "" }
-  ]);
+  const [targetJobs, setTargetJobs] = useState<{id: number; title: string; company: string; url: string}[]>([]);
   const [newJobUrl, setNewJobUrl] = useState("");
 
   const myOrders = orders.filter((o: any) => o.clientId === authUser?.id);
@@ -73,9 +70,12 @@ export function DashboardPage() {
     if (!isLoading && !authUser) {
       navigate("/login");
     } else if (authUser) {
-      setProfileData(prev => ({ ...prev, email: authUser.email }));
+      setProfileData({ name: authUser.fullName || authUser.username, email: authUser.email });
     }
   }, [authUser, isLoading, navigate]);
+
+  const assignedWriter = writers.find((w: any) => w.id === currentOrder?.writerId);
+  const writerInitials = assignedWriter?.fullName?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || 'TBA';
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -342,18 +342,27 @@ export function DashboardPage() {
                       <CardTitle className="text-base">Your Writer</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                          SJ
+                      {assignedWriter ? (
+                        <>
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                              {writerInitials}
+                            </div>
+                            <div>
+                              <p className="font-medium text-sm">{assignedWriter.fullName}</p>
+                              <p className="text-xs text-muted-foreground">Resume Writer</p>
+                            </div>
+                          </div>
+                          <Button variant="outline" size="sm" className="w-full" onClick={() => document.querySelector('[value="chat"]')?.dispatchEvent(new MouseEvent('click', {bubbles: true}))}>
+                            <MessageSquare className="w-4 h-4 mr-2" /> Message
+                          </Button>
+                        </>
+                      ) : (
+                        <div className="text-center py-4 text-muted-foreground">
+                          <p className="text-sm">No writer assigned yet</p>
+                          <p className="text-xs mt-1">A writer will be assigned shortly</p>
                         </div>
-                        <div>
-                          <p className="font-medium text-sm">Sarah Jenkins</p>
-                          <p className="text-xs text-muted-foreground">Senior Resume Writer</p>
-                        </div>
-                      </div>
-                      <Button variant="outline" size="sm" className="w-full" onClick={() => document.querySelector('[value="chat"]')?.dispatchEvent(new MouseEvent('click', {bubbles: true}))}>
-                        <MessageSquare className="w-4 h-4 mr-2" /> Message
-                      </Button>
+                      )}
                     </CardContent>
                   </Card>
                 </div>
@@ -538,14 +547,20 @@ export function DashboardPage() {
               <Card className="h-full flex flex-col border-none shadow-md">
                 <CardHeader className="border-b py-3 bg-card">
                   <CardTitle className="text-base flex items-center gap-2">
-                    <div className="relative">
-                      <div className="w-2 h-2 rounded-full bg-green-500 absolute -right-0.5 -bottom-0.5 border border-white" />
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold">SJ</div>
-                    </div>
-                    <div>
-                      <span className="block text-sm">Sarah Jenkins</span>
-                      <span className="block text-[10px] text-muted-foreground font-normal">Online now</span>
-                    </div>
+                    {assignedWriter ? (
+                      <>
+                        <div className="relative">
+                          <div className="w-2 h-2 rounded-full bg-green-500 absolute -right-0.5 -bottom-0.5 border border-white" />
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold">{writerInitials}</div>
+                        </div>
+                        <div>
+                          <span className="block text-sm">{assignedWriter.fullName}</span>
+                          <span className="block text-[10px] text-muted-foreground font-normal">Your Writer</span>
+                        </div>
+                      </>
+                    ) : (
+                      <span className="text-muted-foreground">No writer assigned yet</span>
+                    )}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="flex-1 p-0 flex flex-col h-full bg-slate-50 dark:bg-slate-900/50">

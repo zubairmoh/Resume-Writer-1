@@ -440,5 +440,137 @@ export async function registerRoutes(
     }
   });
 
+  // User management (Admin)
+  app.get("/api/admin/users", isAdmin, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users.map(u => ({ ...u, password: undefined })));
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching users" });
+    }
+  });
+
+  app.patch("/api/admin/users/:id/role", isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { role } = req.body;
+      const currentUser = req.user as any;
+      
+      if (id === currentUser.id && role !== 'admin') {
+        return res.status(400).json({ message: "Cannot demote yourself" });
+      }
+      
+      const user = await storage.updateUser(id, { role });
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json({ ...user, password: undefined });
+    } catch (error) {
+      res.status(500).json({ message: "Error updating user role" });
+    }
+  });
+
+  // Add-ons catalog
+  app.get("/api/addons", async (req, res) => {
+    try {
+      const addonsList = await storage.getAddons();
+      res.json(addonsList);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching addons" });
+    }
+  });
+
+  app.post("/api/addons", isAdmin, async (req, res) => {
+    try {
+      const addon = await storage.createAddon(req.body);
+      res.status(201).json(addon);
+    } catch (error) {
+      res.status(500).json({ message: "Error creating addon" });
+    }
+  });
+
+  app.patch("/api/addons/:id", isAdmin, async (req, res) => {
+    try {
+      const addon = await storage.updateAddon(req.params.id, req.body);
+      if (!addon) {
+        return res.status(404).json({ message: "Addon not found" });
+      }
+      res.json(addon);
+    } catch (error) {
+      res.status(500).json({ message: "Error updating addon" });
+    }
+  });
+
+  // Order add-ons
+  app.get("/api/orders/:orderId/addons", isAuthenticated, async (req, res) => {
+    try {
+      const orderAddons = await storage.getOrderAddons(req.params.orderId);
+      res.json(orderAddons);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching order addons" });
+    }
+  });
+
+  app.post("/api/orders/:orderId/addons", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { addonId, price } = req.body;
+      const orderAddon = await storage.createOrderAddon({
+        orderId: req.params.orderId,
+        addonId,
+        price,
+        pushedBy: user.id,
+        pushedByRole: user.role,
+        status: user.role === 'client' ? 'accepted' : 'pending',
+        acceptedAt: user.role === 'client' ? new Date() : undefined,
+      });
+      res.status(201).json(orderAddon);
+    } catch (error) {
+      res.status(500).json({ message: "Error adding addon to order" });
+    }
+  });
+
+  app.patch("/api/orders/:orderId/addons/:id/accept", isAuthenticated, async (req, res) => {
+    try {
+      const orderAddon = await storage.updateOrderAddon(req.params.id, {
+        status: 'accepted',
+        acceptedAt: new Date(),
+      });
+      res.json(orderAddon);
+    } catch (error) {
+      res.status(500).json({ message: "Error accepting addon" });
+    }
+  });
+
+  // Price override (Admin)
+  app.patch("/api/orders/:id/override-price", isAdmin, async (req, res) => {
+    try {
+      const { customPrice, overrideReason } = req.body;
+      const user = req.user as any;
+      const order = await storage.updateOrder(req.params.id, {
+        customPrice,
+        overrideReason,
+        overrideBy: user.id,
+      });
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+      res.json(order);
+    } catch (error) {
+      res.status(500).json({ message: "Error overriding price" });
+    }
+  });
+
+  // Chat log viewing (Admin)
+  app.get("/api/admin/messages", isAdmin, async (req, res) => {
+    try {
+      const { orderId } = req.query;
+      const messages = await storage.getMessages(orderId as string | undefined);
+      res.json(messages);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching messages" });
+    }
+  });
+
   return httpServer;
 }
