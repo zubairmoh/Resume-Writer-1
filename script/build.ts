@@ -1,5 +1,6 @@
 import { build as viteBuild } from "vite";
-import { writeFile, mkdir, rm } from "fs/promises";
+import { build as esbuild } from "esbuild";
+import { rm, writeFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 
 async function buildAll() {
@@ -19,20 +20,78 @@ async function buildAll() {
     process.exit(1);
   }
 
-  // 3. Create dummy server entry point to satisfy package.json command
-  // Command is: "tsx script/build.ts && mv dist/index.cjs dist/server.js"
-  // We need 'dist/index.cjs' to exist so 'mv' doesn't fail.
-  
-  // Create dist folder if vite didn't (unlikely)
-  if (!existsSync("dist")) {
-    await mkdir("dist", { recursive: true });
-  }
+  // 3. Build Server (esbuild) - output as CommonJS
+  console.log("Building server (esbuild)...");
+  try {
+    await esbuild({
+      entryPoints: ["server/index.ts"],
+      bundle: true,
+      platform: "node",
+      target: "node20",
+      outfile: "dist/server.cjs",
+      format: "cjs",
+      external: [
+        // Database drivers
+        "pg-native",
+        "better-sqlite3",
+        "mysql2",
+        "tedious",
+        "oracledb",
+        "pg-query-stream",
+        // Vite and build tools (not needed in production)
+        "vite",
+        "./vite",
+        "@vitejs/plugin-react",
+        "@replit/vite-plugin-cartographer",
+        "@replit/vite-plugin-dev-banner",
+        "@replit/vite-plugin-runtime-error-modal",
+        "@tailwindcss/vite",
+        "lightningcss",
+        "@tailwindcss/oxide",
+        "@tailwindcss/oxide-*",
+        "tailwindcss",
+        "autoprefixer",
+        "postcss",
+        "esbuild",
+        "@babel/*",
+        "tsx",
+        "typescript",
+      ],
+      sourcemap: false,
+      minify: false,
+    });
+    
+    // Create stub vite modules for production (both ESM and CJS)
+    // The dynamic import in server/index.ts expects ./vite
+    await writeFile("dist/vite.js", `
+// Stub module - vite is not needed in production
+export function setupVite() {
+  throw new Error("Vite should not be called in production mode");
+}
+`);
+    await writeFile("dist/vite.cjs", `
+// Stub module - vite is not needed in production
+module.exports.setupVite = function() {
+  throw new Error("Vite should not be called in production mode");
+};
+`);
 
-  console.log("Creating dummy server file for Hostinger compatibility...");
-  await writeFile(
-    "dist/index.cjs", 
-    "console.log('Frontend-only build. Server logic is bypassed.');"
-  );
+    // Create an ESM wrapper that loads the CJS bundle using createRequire
+    await writeFile("dist/index.cjs", `
+import { createRequire } from 'module';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const require = createRequire(import.meta.url);
+
+require(join(__dirname, 'server.cjs'));
+`);
+  } catch (error) {
+    console.error("Server build failed:", error);
+    process.exit(1);
+  }
 
   console.log("Build complete!");
 }
