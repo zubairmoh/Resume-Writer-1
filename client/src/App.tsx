@@ -1,5 +1,5 @@
 // ... keep existing imports and add:
-import { ProtectedRoute } from "@/pages/ProtectedRoute";
+import { ProtectedRoute } from "./pages/ProtectedRoute";
 
 function App() {
   return (
