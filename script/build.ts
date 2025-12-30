@@ -1,6 +1,6 @@
 import { build as viteBuild } from "vite";
 import { build as esbuild } from "esbuild";
-import { rm, writeFile, mkdir } from "fs/promises";
+import { rm, writeFile } from "fs/promises";
 import { existsSync } from "fs";
 
 async function buildAll() {
@@ -30,6 +30,10 @@ async function buildAll() {
       target: "node20",
       outfile: "dist/server.cjs",
       format: "cjs",
+      // Inline NODE_ENV as "production" to tree-shake vite dev code
+      define: {
+        "process.env.NODE_ENV": '"production"',
+      },
       external: [
         // Database drivers
         "pg-native",
@@ -38,7 +42,7 @@ async function buildAll() {
         "tedious",
         "oracledb",
         "pg-query-stream",
-        // Vite and build tools (not needed in production)
+        // Vite and build tools (not needed in production - will be tree-shaken)
         "vite",
         "./vite",
         "@vitejs/plugin-react",
@@ -60,23 +64,8 @@ async function buildAll() {
       sourcemap: false,
       minify: false,
     });
-    
-    // Create stub vite modules for production (both ESM and CJS)
-    // The dynamic import in server/index.ts expects ./vite
-    await writeFile("dist/vite.js", `
-// Stub module - vite is not needed in production
-export function setupVite() {
-  throw new Error("Vite should not be called in production mode");
-}
-`);
-    await writeFile("dist/vite.cjs", `
-// Stub module - vite is not needed in production
-module.exports.setupVite = function() {
-  throw new Error("Vite should not be called in production mode");
-};
-`);
 
-    // Create an ESM wrapper that loads the CJS bundle using createRequire
+    // Create an ESM wrapper that loads the CJS bundle
     await writeFile("dist/index.cjs", `
 import { createRequire } from 'module';
 import { fileURLToPath } from 'url';
