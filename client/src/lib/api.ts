@@ -174,4 +174,22 @@ export const api = {
     updateSettings: (data: Partial<AdminSettings>) =>
       fetchAPI("/admin/settings", { method: "PATCH", body: JSON.stringify(data) }),
   },
+
+  widgets: {
+    getLayout: (): Promise<WidgetConfig[] | null> => fetchAPI("/widgets"),
+    
+    saveLayout: (widgets: WidgetConfig[]) =>
+      fetchAPI("/widgets", { method: "PUT", body: JSON.stringify({ widgets }) }),
+  },
 };
+
+export interface WidgetConfig {
+  id: string;
+  type: "stats" | "chart" | "activity" | "shortcuts" | "orders" | "leads" | "messages";
+  title: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  visible: boolean;
+}

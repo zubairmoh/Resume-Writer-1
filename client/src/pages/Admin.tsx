@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AdminDocuments } from "@/components/AdminDocuments";
 import { AdminSettings } from "@/components/AdminSettings";
 import { AdminLiveChat } from "@/components/AdminLiveChat";
-import { Settings, Users, Briefcase, Plus, Trash2, Edit2, MessageSquare, DollarSign, PieChart, TrendingUp, AlertCircle, FileText, MessageCircle, Loader2 } from "lucide-react";
+import { Settings, Users, Briefcase, Plus, Trash2, Edit2, MessageSquare, DollarSign, PieChart, TrendingUp, AlertCircle, FileText, MessageCircle, Loader2, LayoutDashboard } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -142,6 +142,9 @@ export function AdminPage() {
           <p className="text-muted-foreground">Manage client orders, writers, and leads.</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={() => navigate("/my-dashboard")} data-testid="link-custom-dashboard">
+            <LayoutDashboard className="w-4 h-4 mr-2" /> My Dashboard
+          </Button>
           <Button variant="outline" onClick={() => setSelectedOrder("settings")}>
             <Settings className="w-4 h-4 mr-2" /> Settings
           </Button>
@@ -444,20 +447,20 @@ export function AdminPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {orders.map((order) => {
-                    const assignedWriter = writers.find(w => w.id === order.assignedWriterId);
+                  {orders.map((order: any) => {
+                    const assignedWriter = writers.find((w: any) => w.id === order.writerId);
                     return (
                       <TableRow key={order.id}>
                         <TableCell className="font-medium">{order.id}</TableCell>
-                        <TableCell>${order.total}</TableCell>
-                        <TableCell>{assignedWriter?.name || "Unassigned"}</TableCell>
+                        <TableCell>${order.price}</TableCell>
+                        <TableCell>{assignedWriter?.fullName || "Unassigned"}</TableCell>
                         <TableCell>
-                          <Badge variant={order.escrowStatus === "released" ? "outline" : "secondary"} className={order.escrowStatus === "held" ? "bg-yellow-100 text-yellow-800" : "bg-green-100 text-green-800"}>
-                            {order.escrowStatus === "held" ? "Held in Escrow" : "Released"}
+                          <Badge variant={order.paymentStatus === "released" ? "outline" : "secondary"} className={order.paymentStatus === "held" ? "bg-yellow-100 text-yellow-800" : "bg-green-100 text-green-800"}>
+                            {order.paymentStatus === "held" ? "Held in Escrow" : "Released"}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          {order.escrowStatus === "held" && (
+                          {order.paymentStatus === "held" && (
                             <Button size="sm" variant="outline" onClick={() => handleReleaseEscrow(order.id)}>
                               Release Payment
                             </Button>
@@ -495,15 +498,15 @@ export function AdminPage() {
                   </div>
                   <div>
                     <p className="text-muted-foreground">Date</p>
-                    <p className="font-medium">{order.date}</p>
+                    <p className="font-medium">{new Date(order.createdAt).toLocaleDateString()}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Package</p>
-                    <p className="font-medium">{order.tier}</p>
+                    <p className="font-medium">{order.packageType}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Total</p>
-                    <p className="font-medium">${order.total}</p>
+                    <p className="font-medium">${order.price}</p>
                   </div>
                 </div>
 
@@ -551,26 +554,10 @@ export function AdminPage() {
 
               <TabsContent value="messages" className="space-y-4 mt-6">
                 <ScrollArea className="h-[300px] border rounded-lg p-4 bg-secondary/20">
-                   {orderMessages.length === 0 ? (
-                      <div className="text-center text-muted-foreground py-8">
-                        <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-20" />
-                        <p>No messages exchanged yet.</p>
-                      </div>
-                   ) : (
-                     <div className="space-y-4">
-                       {orderMessages.map((msg) => (
-                         <div key={msg.id} className="flex flex-col gap-1">
-                           <div className="flex justify-between text-xs text-muted-foreground px-1">
-                             <span className="font-medium">{msg.role === "writer" ? "Writer" : msg.role === "admin" ? "Admin" : "Client"}</span>
-                             <span>{new Date(msg.timestamp).toLocaleString()}</span>
-                           </div>
-                           <div className={`p-3 rounded-lg text-sm ${msg.role === "writer" ? "bg-white border" : msg.role === "admin" ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>
-                             {msg.text}
-                           </div>
-                         </div>
-                       ))}
-                     </div>
-                   )}
+                  <div className="text-center text-muted-foreground py-8">
+                    <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-20" />
+                    <p>Select an order to view messages.</p>
+                  </div>
                 </ScrollArea>
               </TabsContent>
             </Tabs>

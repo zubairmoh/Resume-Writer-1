@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { FileText, Send, User, Upload, MessageSquare, AlertTriangle, FileInput, History, CheckCircle2, Circle, Clock, Briefcase, Plus, ExternalLink, Trash2, Loader2 } from "lucide-react";
+import { FileText, Send, User, Upload, MessageSquare, AlertTriangle, FileInput, History, CheckCircle2, Circle, Clock, Briefcase, Plus, ExternalLink, Trash2, Loader2, LayoutDashboard } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { RevisionTimer } from "@/components/RevisionTimer";
 import { OrderHistory } from "@/components/OrderHistory";
@@ -160,6 +160,9 @@ export function DashboardPage() {
         <nav className="flex-1 p-4 space-y-2">
           <Button variant="secondary" className="w-full justify-start font-medium">
             <FileText className="mr-2 h-4 w-4" /> My Orders
+          </Button>
+          <Button variant="ghost" className="w-full justify-start font-medium" onClick={() => navigate("/my-dashboard")} data-testid="link-custom-dashboard">
+            <LayoutDashboard className="mr-2 h-4 w-4" /> My Dashboard
           </Button>
           <Button variant="ghost" className="w-full justify-start font-medium" onClick={() => setIsProfileOpen(true)}>
             <User className="mr-2 h-4 w-4" /> Profile

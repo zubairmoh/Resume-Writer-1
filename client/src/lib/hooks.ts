@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, type Lead, type Order, type Message, type Document, type AdminSettings, type User } from "./api";
+import { api, type Lead, type Order, type Message, type Document, type AdminSettings, type User, type WidgetConfig } from "./api";
 
 export function useLeads() {
   return useQuery({
@@ -167,6 +167,23 @@ export function useUpdateAdminSettings() {
     mutationFn: (data: Partial<AdminSettings>) => api.admin.updateSettings(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "settings"] });
+    },
+  });
+}
+
+export function useWidgetLayout() {
+  return useQuery({
+    queryKey: ["widgets"],
+    queryFn: () => api.widgets.getLayout(),
+  });
+}
+
+export function useSaveWidgetLayout() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (widgets: WidgetConfig[]) => api.widgets.saveLayout(widgets),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["widgets"] });
     },
   });
 }

@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
-import { FileText, MessageSquare, CheckCircle, DollarSign, LogOut, Send, User, Upload, History, TrendingUp, Star, Clock, Award, LayoutGrid, List as ListIcon, MoreHorizontal, Loader2 } from "lucide-react";
+import { FileText, MessageSquare, CheckCircle, DollarSign, LogOut, Send, User, Upload, History, TrendingUp, Star, Clock, Award, LayoutGrid, List as ListIcon, MoreHorizontal, Loader2, LayoutDashboard } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
@@ -172,6 +172,9 @@ export function WriterPage() {
             <p className="text-sm font-medium">{user.email}</p>
             <p className="text-xs text-muted-foreground">Senior Writer</p>
           </div>
+          <Button variant="outline" size="sm" onClick={() => navigate("/my-dashboard")} data-testid="link-custom-dashboard">
+            <LayoutDashboard className="w-4 h-4 mr-2" /> My Dashboard
+          </Button>
           <Button variant="outline" size="sm" onClick={() => { logout(); navigate("/"); }}>
             <LogOut className="w-4 h-4 mr-2" /> Logout
           </Button>

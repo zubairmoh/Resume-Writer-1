@@ -14,6 +14,7 @@ import { LoginPage } from "@/pages/Login";
 import { SignupPage } from "@/pages/Signup";
 import { CheckoutPage } from "@/pages/Checkout";
 import { LegalPage } from "@/pages/Legal";
+import CustomizableDashboard from "@/pages/CustomizableDashboard";
 import NotFound from "@/pages/not-found";
 
 function App() {
@@ -30,6 +31,7 @@ function App() {
                 <Route path="/signup" element={<SignupPage />} />
                 <Route path="/checkout" element={<CheckoutPage />} />
                 <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/my-dashboard" element={<CustomizableDashboard />} />
                 <Route path="/admin" element={<AdminPage />} />
                 <Route path="/writer" element={<WriterPage />} />
                 <Route path="/privacy" element={<LegalPage />} />
