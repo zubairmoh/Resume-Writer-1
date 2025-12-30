@@ -1,21 +1,5 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { queryClient } from "./lib/queryClient";
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { AppProvider } from "@/lib/store";
-import { AuthProvider } from "@/lib/auth";
-
-import { LandingPage } from "@/pages/Landing";
-import { DashboardPage } from "@/pages/Dashboard";
-import { AdminPage } from "@/pages/Admin";
-import { WriterPage } from "@/pages/Writer";
-import { LoginPage } from "@/pages/Login";
-import { SignupPage } from "@/pages/Signup";
-import { CheckoutPage } from "@/pages/Checkout";
-import { LegalPage } from "@/pages/Legal";
-import CustomizableDashboard from "@/pages/CustomizableDashboard";
-import NotFound from "@/pages/not-found";
+// ... keep existing imports and add:
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 function App() {
   return (
@@ -26,17 +10,30 @@ function App() {
             <Toaster />
             <BrowserRouter>
               <Routes>
+                {/* Public Routes */}
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signup" element={<SignupPage />} />
-                <Route path="/checkout" element={<CheckoutPage />} />
-                <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/my-dashboard" element={<CustomizableDashboard />} />
-                <Route path="/admin" element={<AdminPage />} />
-                <Route path="/writer" element={<WriterPage />} />
                 <Route path="/privacy" element={<LegalPage />} />
                 <Route path="/terms" element={<LegalPage />} />
                 <Route path="/cookie-policy" element={<LegalPage />} />
+
+                {/* Protected User Routes */}
+                <Route path="/dashboard" element={
+                  <ProtectedRoute><DashboardPage /></ProtectedRoute>
+                } />
+                <Route path="/checkout" element={
+                  <ProtectedRoute><CheckoutPage /></ProtectedRoute>
+                } />
+
+                {/* Role-Specific Protected Routes */}
+                <Route path="/admin" element={
+                  <ProtectedRoute allowedRoles={["admin"]}><AdminPage /></ProtectedRoute>
+                } />
+                <Route path="/writer" element={
+                  <ProtectedRoute allowedRoles={["writer"]}><WriterPage /></ProtectedRoute>
+                } />
+
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
@@ -46,5 +43,3 @@ function App() {
     </QueryClientProvider>
   );
 }
-
-export default App;
