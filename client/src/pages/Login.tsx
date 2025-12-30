@@ -4,12 +4,11 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { CheckCircle2, Loader2 } from "lucide-react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 
 export function LoginPage() {
-  const navigate = useNavigate();
   const { login } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -27,48 +26,21 @@ export function LoginPage() {
       const user = await login(formData.username, formData.password);
       toast({ title: "Welcome back!", description: `Logged in as ${user.fullName}` });
       
-      if (user.role === "admin") {
-        navigate("/admin");
-      } else if (user.role === "writer") {
-        navigate("/writer");
-      } else {
-        navigate("/dashboard");
-      }
+      setTimeout(() => {
+        if (user.role === "admin") {
+          window.location.href = "/admin";
+        } else if (user.role === "writer") {
+          window.location.href = "/writer";
+        } else {
+          window.location.href = "/dashboard";
+        }
+      }, 100);
     } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Login failed",
         description: error.message || "Invalid username or password",
       });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleQuickLogin = async (role: "admin" | "writer" | "client") => {
-    const credentials = {
-      admin: { username: "admin", password: "admin123" },
-      writer: { username: "writer", password: "writer123" },
-      client: { username: "client", password: "client123" },
-    };
-    
-    setFormData(credentials[role]);
-    setIsLoading(true);
-    
-    try {
-      const user = await login(credentials[role].username, credentials[role].password);
-      toast({ title: `Logged in as ${role}` });
-      
-      if (role === "admin") navigate("/admin");
-      else if (role === "writer") navigate("/writer");
-      else navigate("/dashboard");
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Quick login failed",
-        description: error.message,
-      });
-    } finally {
       setIsLoading(false);
     }
   };
@@ -144,27 +116,6 @@ export function LoginPage() {
                 {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                 Sign In
               </Button>
-              
-              <div className="relative w-full">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">Quick Login (Demo)</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-2 w-full">
-                <Button type="button" variant="outline" size="sm" onClick={() => handleQuickLogin("admin")} disabled={isLoading}>
-                  Admin
-                </Button>
-                <Button type="button" variant="outline" size="sm" onClick={() => handleQuickLogin("writer")} disabled={isLoading}>
-                  Writer
-                </Button>
-                <Button type="button" variant="outline" size="sm" onClick={() => handleQuickLogin("client")} disabled={isLoading}>
-                  Client
-                </Button>
-              </div>
 
               <p className="text-sm text-center text-muted-foreground">
                 Don't have an account?{" "}
