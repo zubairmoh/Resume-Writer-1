@@ -211,12 +211,22 @@ export function DashboardPage() {
             </TabsList>
 
             <TabsContent value="order" className="flex-1 space-y-6">
+              {!currentOrder ? (
+                <Card className="border-dashed">
+                  <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                    <FileText className="w-12 h-12 text-muted-foreground/50 mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No Orders Yet</h3>
+                    <p className="text-muted-foreground mb-4">Start your journey with a professional resume</p>
+                    <Button onClick={() => navigate("/pricing")}>Browse Packages</Button>
+                  </CardContent>
+                </Card>
+              ) : (
               <div className="grid md:grid-cols-3 gap-6">
                 <div className="md:col-span-2 space-y-6">
                    <Card className="border-l-4 border-l-primary shadow-sm">
                     <CardHeader className="pb-2">
                       <CardTitle className="flex justify-between items-center text-lg">
-                        <span>Order #{currentOrder.id}</span>
+                        <span>Order #{currentOrder.id.slice(0, 8)}</span>
                         <Badge variant={currentOrder.status === "Completed" ? "default" : "secondary"}>
                           {currentOrder.status}
                         </Badge>
@@ -226,15 +236,15 @@ export function DashboardPage() {
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
                         <div>
                           <p className="text-muted-foreground text-xs uppercase tracking-wide">Package</p>
-                          <p className="font-medium mt-1">{currentOrder.tier}</p>
+                          <p className="font-medium mt-1">{currentOrder.packageType}</p>
                         </div>
                         <div>
                           <p className="text-muted-foreground text-xs uppercase tracking-wide">Date</p>
-                          <p className="font-medium mt-1">{currentOrder.date}</p>
+                          <p className="font-medium mt-1">{new Date(currentOrder.createdAt).toLocaleDateString()}</p>
                         </div>
                         <div>
                           <p className="text-muted-foreground text-xs uppercase tracking-wide">Total Paid</p>
-                          <p className="font-medium mt-1">${currentOrder.total}</p>
+                          <p className="font-medium mt-1">${currentOrder.price}</p>
                         </div>
                       </div>
 
@@ -348,6 +358,7 @@ export function DashboardPage() {
                   </Card>
                 </div>
               </div>
+              )}
             </TabsContent>
 
             <TabsContent value="documents" className="flex-1">
