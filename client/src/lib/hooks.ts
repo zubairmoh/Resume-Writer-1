@@ -77,6 +77,7 @@ export function useMessages(orderId?: string) {
   return useQuery({
     queryKey: ["messages", orderId],
     queryFn: () => api.messages.getAll(orderId),
+    enabled: !!orderId,
   });
 }
 

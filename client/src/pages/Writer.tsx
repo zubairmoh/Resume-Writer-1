@@ -1,20 +1,23 @@
 import { useState, useRef, useEffect } from "react";
-import { useApp } from "@/lib/store";
 import { useAuth } from "@/lib/auth";
+import { useOrders, useMessages, useCreateMessage, useUpdateOrder } from "@/lib/hooks";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
-import { FileText, MessageSquare, CheckCircle, DollarSign, LogOut, Send, User, Upload, History, TrendingUp, Star, Clock, Award, LayoutGrid, List as ListIcon, MoreHorizontal } from "lucide-react";
+import { FileText, MessageSquare, CheckCircle, DollarSign, LogOut, Send, User, Upload, History, TrendingUp, Star, Clock, Award, LayoutGrid, List as ListIcon, MoreHorizontal, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 
 export function WriterPage() {
-  const { user: authUser, logout, isLoading } = useAuth();
-  const { orders, updateOrderStatus, releaseEscrow, messages, addMessage } = useApp();
+  const { user: authUser, logout, isLoading: authLoading } = useAuth();
+  const { data: orders = [], isLoading: ordersLoading } = useOrders();
+  const updateOrder = useUpdateOrder();
+  const createMessage = useCreateMessage();
+  
   const navigate = useNavigate();
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [chatInput, setChatInput] = useState("");
@@ -22,11 +25,13 @@ export function WriterPage() {
   const [notes, setNotes] = useState("");
   const [viewMode, setViewMode] = useState<"list" | "board">("list");
 
-  const myOrders = orders.filter(o => o.assignedWriterId || !o.assignedWriterId); 
-  const activeOrder = myOrders.find(o => o.id === selectedOrderId);
+  const myOrders = orders.filter((o: any) => o.writerId === authUser?.id);
+  const activeOrder: any = myOrders.find((o: any) => o.id === selectedOrderId);
 
-  // Filter messages for the selected order
-  const orderMessages = messages.filter(m => m.orderId === selectedOrderId).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  const { data: messages = [] } = useMessages(selectedOrderId || undefined);
+  const orderMessages = messages.sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  
+  const isLoading = authLoading || ordersLoading;
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -54,18 +59,21 @@ export function WriterPage() {
   
   const user = authUser;
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!chatInput.trim() || !selectedOrderId) return;
+    if (!chatInput.trim() || !selectedOrderId || !authUser) return;
 
-    addMessage({
-      orderId: selectedOrderId,
-      senderId: "WR-001", // Mock ID for logged in writer
-      senderName: "Sarah Jenkins", // Mock Name
-      role: "writer",
-      text: chatInput
-    });
-    setChatInput("");
+    try {
+      await createMessage.mutateAsync({
+        orderId: selectedOrderId,
+        senderId: authUser.id,
+        content: chatInput,
+        type: "chat",
+      });
+      setChatInput("");
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Error", description: error.message });
+    }
   };
 
   const handleSaveNotes = () => {
@@ -103,7 +111,7 @@ export function WriterPage() {
         
         <ScrollArea className="flex-1 pr-2">
            <div className="space-y-3">
-             {displayOrders.map(order => (
+             {displayOrders.map((order: any) => (
                <Card 
                  key={order.id} 
                  className="cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow border-l-4"
@@ -112,14 +120,13 @@ export function WriterPage() {
                >
                  <CardContent className="p-4">
                    <div className="flex justify-between items-start mb-2">
-                     <span className="font-bold text-sm">#{order.id}</span>
-                     <Badge variant="outline" className="text-[10px]">{order.tier}</Badge>
+                     <span className="font-bold text-sm">#{order.id.slice(0,6)}</span>
+                     <Badge variant="outline" className="text-[10px]">{order.packageType}</Badge>
                    </div>
-                   <p className="text-sm font-medium mb-1">Software Engineer</p>
-                   <p className="text-xs text-muted-foreground mb-3">Client: John Doe</p>
+                   <p className="text-sm font-medium mb-1">{order.targetJobTitle || "Resume"}</p>
+                   <p className="text-xs text-muted-foreground mb-3">Order</p>
                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                     <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {order.daysRemaining}d left</span>
-                     <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">SJ</div>
+                     <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {order.status}</span>
                    </div>
                  </CardContent>
                </Card>
@@ -237,7 +244,7 @@ export function WriterPage() {
                          <p>No orders assigned yet.</p>
                        </div>
                     ) : (
-                      myOrders.map((order) => (
+                      myOrders.map((order: any) => (
                         <div 
                           key={order.id}
                           className={`p-4 cursor-pointer hover:bg-secondary/80 transition-all border-l-4 ${
@@ -248,22 +255,22 @@ export function WriterPage() {
                           onClick={() => setSelectedOrderId(order.id)}
                         >
                           <div className="flex justify-between items-start mb-2">
-                            <span className="font-semibold text-sm">{order.id}</span>
-                            <Badge variant={order.status === "Completed" ? "default" : "outline"} className="text-xs">
+                            <span className="font-semibold text-sm">{order.id.slice(0, 8)}...</span>
+                            <Badge variant={order.status === "completed" ? "default" : "outline"} className="text-xs">
                               {order.status}
                             </Badge>
                           </div>
                           <div className="flex justify-between items-end">
                             <div>
-                              <p className="text-xs font-medium">{order.tier} Package</p>
-                              <p className="text-xs text-muted-foreground">{order.date}</p>
+                              <p className="text-xs font-medium">{order.packageType} Package</p>
+                              <p className="text-xs text-muted-foreground">{new Date(order.createdAt).toLocaleDateString()}</p>
                             </div>
-                            {order.escrowStatus === "held" && (
+                            {order.paymentStatus === "held" && (
                               <Badge variant="secondary" className="text-[10px] bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-yellow-200">
                                 Escrow Held
                               </Badge>
                             )}
-                            {order.escrowStatus === "released" && (
+                            {order.paymentStatus === "released" && (
                               <Badge variant="secondary" className="text-[10px] bg-green-100 text-green-800 hover:bg-green-200 border-green-200">
                                 Paid
                               </Badge>
@@ -286,14 +293,21 @@ export function WriterPage() {
                 <Card className="shrink-0 shadow-sm">
                   <CardHeader className="flex flex-row items-center justify-between py-4">
                     <div>
-                      <CardTitle className="text-xl">Order #{activeOrder.id}</CardTitle>
+                      <CardTitle className="text-xl">Order #{activeOrder.id.slice(0, 8)}...</CardTitle>
                       <CardDescription>
-                        {activeOrder.tier} Package • Due in {activeOrder.daysRemaining} days
+                        {activeOrder.packageType} Package
                       </CardDescription>
                     </div>
                     <div className="flex gap-2">
-                      {activeOrder.status !== "Completed" && (
-                        <Button onClick={() => updateOrderStatus(activeOrder.id, "Completed")} className="bg-green-600 hover:bg-green-700">
+                      {activeOrder.status !== "completed" && (
+                        <Button onClick={async () => {
+                          try {
+                            await updateOrder.mutateAsync({ id: activeOrder.id, data: { status: "completed" } });
+                            toast({ title: "Order marked as complete" });
+                          } catch (e: any) {
+                            toast({ variant: "destructive", title: "Error", description: e.message });
+                          }
+                        }} className="bg-green-600 hover:bg-green-700">
                           <CheckCircle className="w-4 h-4 mr-2" /> Mark Complete
                         </Button>
                       )}
@@ -304,9 +318,9 @@ export function WriterPage() {
                       <div className="flex-1">
                         <p className="text-xs font-medium text-muted-foreground mb-1 uppercase tracking-wider">Payment Status</p>
                         <div className="flex items-center gap-2">
-                          <DollarSign className={`w-4 h-4 ${activeOrder.escrowStatus === "released" ? "text-green-500" : "text-yellow-500"}`} />
-                          <span className={`font-bold text-sm ${activeOrder.escrowStatus === "released" ? "text-green-700" : "text-yellow-700"}`}>
-                            {activeOrder.escrowStatus === "released" ? "Funds Released" : "Funds in Escrow"}
+                          <DollarSign className={`w-4 h-4 ${activeOrder.paymentStatus === "released" ? "text-green-500" : "text-yellow-500"}`} />
+                          <span className={`font-bold text-sm ${activeOrder.paymentStatus === "released" ? "text-green-700" : "text-yellow-700"}`}>
+                            {activeOrder.paymentStatus === "released" ? "Funds Released" : "Funds in Escrow"}
                           </span>
                         </div>
                       </div>
@@ -342,7 +356,7 @@ export function WriterPage() {
                            
                            <div className="space-y-3">
                              {activeOrder.targetJobs && activeOrder.targetJobs.length > 0 ? (
-                               activeOrder.targetJobs.map((job, i) => (
+                               activeOrder.targetJobs.map((job: any, i: number) => (
                                  <div key={i} className="flex items-center justify-between p-4 border rounded-lg bg-card hover:bg-secondary/20 transition-colors">
                                    <div className="flex items-center gap-4">
                                      <div className="w-10 h-10 rounded bg-primary/10 flex items-center justify-center text-primary">
@@ -383,22 +397,25 @@ export function WriterPage() {
                                <p>No messages yet. Start the conversation!</p>
                              </div>
                           ) : (
-                            orderMessages.map((msg) => (
-                              <div key={msg.id} className={`flex ${msg.role === "writer" ? "justify-end" : "justify-start"}`}>
-                                <div className={`flex flex-col ${msg.role === "writer" ? "items-end" : "items-start"} max-w-[80%]`}>
-                                  <div className={`px-4 py-2 text-sm shadow-sm ${
-                                    msg.role === "writer" 
-                                      ? "bg-primary text-primary-foreground rounded-2xl rounded-tr-sm" 
-                                      : "bg-white dark:bg-card border text-foreground rounded-2xl rounded-tl-sm"
-                                  }`}>
-                                    {msg.text}
+                            orderMessages.map((msg: any) => {
+                              const isMe = msg.senderId === authUser?.id;
+                              return (
+                                <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+                                  <div className={`flex flex-col ${isMe ? "items-end" : "items-start"} max-w-[80%]`}>
+                                    <div className={`px-4 py-2 text-sm shadow-sm ${
+                                      isMe 
+                                        ? "bg-primary text-primary-foreground rounded-2xl rounded-tr-sm" 
+                                        : "bg-white dark:bg-card border text-foreground rounded-2xl rounded-tl-sm"
+                                    }`}>
+                                      {msg.content}
+                                    </div>
+                                    <span className="text-[10px] text-muted-foreground mt-1 px-1">
+                                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </span>
                                   </div>
-                                  <span className="text-[10px] text-muted-foreground mt-1 px-1">
-                                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                  </span>
                                 </div>
-                              </div>
-                            ))
+                              );
+                            })
                           )}
                         </div>
                         <div className="p-4 bg-card border-t">

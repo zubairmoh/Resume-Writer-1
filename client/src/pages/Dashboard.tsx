@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef } from "react";
-import { useApp } from "@/lib/store";
 import { useAuth } from "@/lib/auth";
+import { useOrders, useMessages, useCreateMessage, useWriters } from "@/lib/hooks";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { FileText, Send, User, Upload, MessageSquare, AlertTriangle, FileInput, History, CheckCircle2, Circle, Clock, Briefcase, Plus, ExternalLink, Trash2 } from "lucide-react";
+import { FileText, Send, User, Upload, MessageSquare, AlertTriangle, FileInput, History, CheckCircle2, Circle, Clock, Briefcase, Plus, ExternalLink, Trash2, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { RevisionTimer } from "@/components/RevisionTimer";
 import { OrderHistory } from "@/components/OrderHistory";
@@ -43,8 +43,11 @@ function TimelineItem({ title, date, status, isLast }: { title: string, date: st
 }
 
 export function DashboardPage() {
-  const { user: authUser, logout, isLoading } = useAuth();
-  const { orders, messages, addMessage, addRevisionRequest } = useApp();
+  const { user: authUser, logout, isLoading: authLoading } = useAuth();
+  const { data: orders = [], isLoading: ordersLoading } = useOrders();
+  const { data: writers = [] } = useWriters();
+  const createMessage = useCreateMessage();
+  
   const navigate = useNavigate();
   const [messageInput, setMessageInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -59,8 +62,12 @@ export function DashboardPage() {
   ]);
   const [newJobUrl, setNewJobUrl] = useState("");
 
-  const currentOrder = orders[0];
-  const orderMessages = messages.filter(m => m.orderId === currentOrder?.id).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  const myOrders = orders.filter((o: any) => o.clientId === authUser?.id);
+  const currentOrder: any = myOrders[0];
+  const { data: messages = [] } = useMessages(currentOrder?.id);
+  const orderMessages = messages.sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  
+  const isLoading = authLoading || ordersLoading;
 
   useEffect(() => {
     if (!isLoading && !authUser) {
@@ -81,18 +88,21 @@ export function DashboardPage() {
   
   const user = authUser;
 
-  const handleSend = (e: React.FormEvent) => {
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!messageInput.trim()) return;
+    if (!messageInput.trim() || !currentOrder || !authUser) return;
     
-    addMessage({
-      orderId: currentOrder.id,
-      senderId: "USR-001",
-      senderName: "Client",
-      role: "client",
-      text: messageInput
-    });
-    setMessageInput("");
+    try {
+      await createMessage.mutateAsync({
+        orderId: currentOrder.id,
+        senderId: authUser.id,
+        content: messageInput,
+        type: "chat",
+      });
+      setMessageInput("");
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Error sending message", description: error.message });
+    }
   };
 
   const handleUpdateProfile = (e: React.FormEvent) => {
@@ -104,23 +114,28 @@ export function DashboardPage() {
     setIsProfileOpen(false);
   };
 
-  const handleSubmitRevision = () => {
-    if (!revisionComments.trim()) {
+  const handleSubmitRevision = async () => {
+    if (!revisionComments.trim() || !currentOrder || !authUser) {
       toast({ title: "Error", description: "Please enter your revision comments.", variant: "destructive" });
       return;
     }
     
-    addRevisionRequest({
-      orderId: currentOrder.id,
-      comments: revisionComments,
-    });
-    
-    toast({
-      title: "Revision Requested",
-      description: "Your writer has been notified.",
-    });
-    setIsRevisionOpen(false);
-    setRevisionComments("");
+    try {
+      await createMessage.mutateAsync({
+        orderId: currentOrder.id,
+        senderId: authUser.id,
+        content: `[REVISION REQUEST] ${revisionComments}`,
+        type: "revision",
+      });
+      toast({
+        title: "Revision Requested",
+        description: "Your writer has been notified.",
+      });
+      setIsRevisionOpen(false);
+      setRevisionComments("");
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Error", description: error.message });
+    }
   };
 
   const handleAddTargetJob = () => {
@@ -522,22 +537,24 @@ export function DashboardPage() {
                 <CardContent className="flex-1 p-0 flex flex-col h-full bg-slate-50 dark:bg-slate-900/50">
                   <ScrollArea className="flex-1 p-4">
                     <div className="space-y-4 pb-4" ref={scrollRef}>
-                      {orderMessages.map((msg) => (
-                        <div key={msg.id} className={`flex ${msg.role === "client" ? "justify-end" : "justify-start"}`}>
-                          <div className={`flex flex-col ${msg.role === "client" ? "items-end" : "items-start"} max-w-[80%]`}>
+                      {orderMessages.map((msg: any) => {
+                        const isMe = msg.senderId === authUser?.id;
+                        return (
+                        <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+                          <div className={`flex flex-col ${isMe ? "items-end" : "items-start"} max-w-[80%]`}>
                             <div className={`px-4 py-2 text-sm shadow-sm ${
-                              msg.role === "client" 
+                              isMe 
                                 ? "bg-primary text-primary-foreground rounded-2xl rounded-tr-sm" 
                                 : "bg-white dark:bg-card border text-foreground rounded-2xl rounded-tl-sm"
                             }`}>
-                              {msg.text}
+                              {msg.content}
                             </div>
                             <span className="text-[10px] text-muted-foreground mt-1 px-1">
-                              {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
                           </div>
                         </div>
-                      ))}
+                      );})}
                     </div>
                   </ScrollArea>
                   <div className="p-4 border-t bg-card">

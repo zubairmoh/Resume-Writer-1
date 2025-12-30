@@ -296,10 +296,18 @@ export async function registerRoutes(
   app.patch("/api/orders/:id", isAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;
-      const order = await storage.updateOrder(id, req.body);
-      if (!order) {
+      const user = req.user as any;
+      const existingOrder = await storage.getOrder(id);
+      
+      if (!existingOrder) {
         return res.status(404).json({ message: "Order not found" });
       }
+      
+      if (user.role !== "admin" && existingOrder.writerId !== user.id) {
+        return res.status(403).json({ message: "Unauthorized to update this order" });
+      }
+      
+      const order = await storage.updateOrder(id, req.body);
       res.json(order);
     } catch (error) {
       res.status(500).json({ message: "Error updating order" });
@@ -309,6 +317,20 @@ export async function registerRoutes(
   app.post("/api/messages", isAuthenticated, async (req, res) => {
     try {
       const data = insertMessageSchema.parse(req.body);
+      const user = req.user as any;
+      
+      if (data.orderId) {
+        const order = await storage.getOrder(data.orderId);
+        if (!order) {
+          return res.status(404).json({ message: "Order not found" });
+        }
+        if (user.role !== "admin" && order.clientId !== user.id && order.writerId !== user.id) {
+          return res.status(403).json({ message: "Unauthorized to send message on this order" });
+        }
+      }
+      
+      data.senderId = user.id;
+      
       const message = await storage.createMessage(data);
       res.status(201).json(message);
     } catch (error) {
@@ -322,6 +344,20 @@ export async function registerRoutes(
   app.get("/api/messages", isAuthenticated, async (req, res) => {
     try {
       const { orderId } = req.query;
+      if (!orderId) {
+        return res.status(400).json({ message: "orderId is required" });
+      }
+      
+      const user = req.user as any;
+      const order = await storage.getOrder(orderId as string);
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+      
+      if (user.role !== "admin" && order.clientId !== user.id && order.writerId !== user.id) {
+        return res.status(403).json({ message: "Unauthorized to view these messages" });
+      }
+      
       const messages = await storage.getMessages(orderId as string);
       res.json(messages);
     } catch (error) {
