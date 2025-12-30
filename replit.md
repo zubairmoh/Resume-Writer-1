@@ -34,16 +34,31 @@ Preferred communication style: Simple, everyday language.
 - **Key Tables**:
   - `users` - User accounts with role-based access (client/writer/admin)
   - `leads` - Captured leads from ATS scanner with email, score, and status
-  - `orders` - Service orders with package type, pricing, and status tracking
+  - `orders` - Service orders with package type, pricing, status tracking, and price override fields
   - `messages` - Communication between users tied to orders
   - `documents` - File references for uploaded resumes and deliverables
-  - `adminSettings` - Platform configuration (payment keys, business info)
+  - `adminSettings` - Platform configuration (payment keys, business info, SMTP email settings)
+  - `addons` - Add-on services that can be attached to orders
+  - `orderAddons` - Junction table linking orders to purchased add-ons
 
 ### API Structure
 - RESTful API endpoints under `/api` prefix
 - Authentication endpoints: `/api/auth/login`, `/api/auth/signup`, `/api/auth/logout`, `/api/auth/me`
 - CRUD endpoints for leads, orders, messages, documents, and admin settings
+- Admin endpoints: `/api/admin/users`, `/api/admin/users/:id/role` for user management
+- Add-ons endpoints: `/api/addons` for CRUD operations
+- Price override: `/api/orders/:id/override` for custom pricing
 - Role-based access control middleware for protected routes
+
+### Admin Panel Features
+- **Order Management**: View and assign orders to writers, track status
+- **Lead Management**: Track ATS scanner leads, assign to writers
+- **Client Management**: View all clients, their orders and spending
+- **Writer Management**: Add/edit writers, view assignments
+- **User Roles**: Promote/demote users between client, writer, and admin roles
+- **Chat Logs**: View message history for any order
+- **Financial Tracking**: Escrow ledger, payment release
+- **Settings**: Payment gateways (Stripe/PayPal), business info, SMTP email, browse notifications
 
 ### Build Configuration
 - Development: Vite dev server with HMR, proxied API calls to Express backend
