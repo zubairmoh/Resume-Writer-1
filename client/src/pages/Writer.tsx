@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useApp } from "@/lib/store";
+import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +13,8 @@ import { toast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 
 export function WriterPage() {
-  const { user, logout, orders, updateOrderStatus, releaseEscrow, messages, addMessage } = useApp();
+  const { user: authUser, logout, isLoading } = useAuth();
+  const { orders, updateOrderStatus, releaseEscrow, messages, addMessage } = useApp();
   const navigate = useNavigate();
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [chatInput, setChatInput] = useState("");
@@ -32,7 +34,14 @@ export function WriterPage() {
     }
   }, [orderMessages, selectedOrderId]);
 
-  if (!user || user.role !== "writer") {
+  useEffect(() => {
+    if (!isLoading && (!authUser || authUser.role !== "writer")) {
+      navigate("/login");
+    }
+  }, [authUser, isLoading, navigate]);
+
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  if (!authUser || authUser.role !== "writer") {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -42,6 +51,8 @@ export function WriterPage() {
       </div>
     );
   }
+  
+  const user = authUser;
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();

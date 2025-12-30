@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useApp } from "@/lib/store";
+import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -42,7 +43,8 @@ function TimelineItem({ title, date, status, isLast }: { title: string, date: st
 }
 
 export function DashboardPage() {
-  const { user, logout, orders, messages, addMessage, addRevisionRequest } = useApp();
+  const { user: authUser, logout, isLoading } = useAuth();
+  const { orders, messages, addMessage, addRevisionRequest } = useApp();
   const navigate = useNavigate();
   const [messageInput, setMessageInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -61,12 +63,12 @@ export function DashboardPage() {
   const orderMessages = messages.filter(m => m.orderId === currentOrder?.id).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
   useEffect(() => {
-    if (!user) {
+    if (!isLoading && !authUser) {
       navigate("/login");
-    } else {
-      setProfileData(prev => ({ ...prev, email: user.email }));
+    } else if (authUser) {
+      setProfileData(prev => ({ ...prev, email: authUser.email }));
     }
-  }, [user, navigate]);
+  }, [authUser, isLoading, navigate]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -74,7 +76,10 @@ export function DashboardPage() {
     }
   }, [orderMessages]);
 
-  if (!user || !currentOrder) return null;
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  if (!authUser) return null;
+  
+  const user = authUser;
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();

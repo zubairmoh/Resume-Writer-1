@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "@/lib/store";
+import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -20,7 +21,8 @@ import { Progress } from "@/components/ui/progress";
 
 // AdminPage Component
 export function AdminPage() {
-  const { user, logout, orders, writers, assignWriter, releaseEscrow, messages, addWriter, updateWriter, deleteWriter, leads, updateLeadStatus, assignLeadToWriter } = useApp();
+  const { user: authUser, logout, isLoading } = useAuth();
+  const { orders, writers, assignWriter, releaseEscrow, messages, addWriter, updateWriter, deleteWriter, leads, updateLeadStatus, assignLeadToWriter } = useApp();
   const navigate = useNavigate();
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
   
@@ -38,14 +40,17 @@ export function AdminPage() {
   const totalRefunded = orders.filter(o => o.escrowStatus === "refunded").reduce((acc, curr) => acc + curr.total, 0);
 
   useEffect(() => {
-    if (!user || user.role !== "admin") {
+    if (!isLoading && (!authUser || authUser.role !== "admin")) {
       navigate("/login");
     }
-  }, [user, navigate]);
+  }, [authUser, isLoading, navigate]);
 
-  if (!user || user.role !== "admin") {
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  if (!authUser || authUser.role !== "admin") {
     return null;
   }
+  
+  const user = authUser;
 
   const handleAssignWriter = (writerId: string) => {
     if (selectedOrder) {
