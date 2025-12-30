@@ -10,7 +10,8 @@ import { LandingPage } from "@/pages/Landing";
 import { DashboardPage } from "@/pages/Dashboard";
 import { AdminPage } from "@/pages/Admin";
 import { WriterPage } from "@/pages/Writer";
-import { AuthPage } from "@/pages/Auth";
+import { LoginPage } from "@/pages/Login";
+import { SignupPage } from "@/pages/Signup";
 import { CheckoutPage } from "@/pages/Checkout";
 import { LegalPage } from "@/pages/Legal";
 import NotFound from "@/pages/not-found";
@@ -25,8 +26,8 @@ function App() {
             <BrowserRouter>
               <Routes>
                 <Route path="/" element={<LandingPage />} />
-                <Route path="/login" element={<AuthPage />} />
-                <Route path="/signup" element={<AuthPage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/signup" element={<SignupPage />} />
                 <Route path="/checkout" element={<CheckoutPage />} />
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/admin" element={<AdminPage />} />

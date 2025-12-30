@@ -1,183 +1,181 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useApp } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { AlertCircle } from "lucide-react";
+import { CheckCircle2, Loader2 } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "@/lib/auth";
+import { useToast } from "@/hooks/use-toast";
 
 export function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [captchaChecked, setCaptchaChecked] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
-  const { login } = useApp();
   const navigate = useNavigate();
+  const { login } = useAuth();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({ username: "", password: "" });
 
-  const handleQuickLogin = (role: "admin" | "writer" | "client") => {
-    if (role === "admin") {
-      const email = "admin@resumepro.com";
-      setEmail(email);
-      setPassword("demo");
-      login(email, "admin");
-      navigate("/admin");
-    } else if (role === "writer") {
-      const email = "writer@proresumes.ca";
-      setEmail(email);
-      setPassword("demo");
-      login(email, "writer");
-      navigate("/writer");
-    } else {
-      const email = "user@example.com";
-      setEmail(email);
-      setPassword("demo");
-      login(email, "client");
-      navigate("/dashboard");
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.username || !formData.password) {
+      toast({ variant: "destructive", title: "Please fill in all fields" });
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      const user = await login(formData.username, formData.password);
+      toast({ title: "Welcome back!", description: `Logged in as ${user.fullName}` });
+      
+      if (user.role === "admin") {
+        navigate("/admin");
+      } else if (user.role === "writer") {
+        navigate("/writer");
+      } else {
+        navigate("/dashboard");
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Login failed",
+        description: error.message || "Invalid username or password",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Submitting login with:", email); // Debugging
+  const handleQuickLogin = async (role: "admin" | "writer" | "client") => {
+    const credentials = {
+      admin: { username: "admin", password: "admin123" },
+      writer: { username: "writer", password: "writer123" },
+      client: { username: "client", password: "client123" },
+    };
     
-    const newErrors: typeof errors = {};
-
-    // Validation
-    if (!email) newErrors.email = "Email is required";
-    if (!password) newErrors.password = "Password is required";
-    // if (!captchaChecked) {
-    //   newErrors.password = "Please verify you are not a robot";
-    // }
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-
-    setErrors({});
-
-    const normalizedEmail = email.trim().toLowerCase();
-
-    // Mock Login Logic
-    if (normalizedEmail === "admin@resumepro.com") {
-      console.log("Logging in as Admin");
-      login(normalizedEmail, "admin");
-      navigate("/admin");
-    } else if (normalizedEmail.includes("writer")) {
-      console.log("Logging in as Writer");
-      login(normalizedEmail, "writer");
-      navigate("/writer");
-    } else {
-      console.log("Logging in as Client");
-      login(normalizedEmail, "client");
-      navigate("/dashboard");
+    setFormData(credentials[role]);
+    setIsLoading(true);
+    
+    try {
+      const user = await login(credentials[role].username, credentials[role].password);
+      toast({ title: `Logged in as ${role}` });
+      
+      if (role === "admin") navigate("/admin");
+      else if (role === "writer") navigate("/writer");
+      else navigate("/dashboard");
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Quick login failed",
+        description: error.message,
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-secondary/30 px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <h1 className="text-2xl font-bold font-display text-primary">ProResumes.ca</h1>
-          <p className="text-muted-foreground">Welcome back</p>
-        </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className={errors.email ? "border-red-500" : ""}
-              />
-              {errors.email && (
-                <p className="text-xs text-red-500 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" /> {errors.email}
-                </p>
-              )}
+    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
+      <div className="hidden md:flex flex-1 bg-primary text-primary-foreground flex-col justify-between p-12">
+        <div>
+          <h1 className="text-2xl font-bold font-display mb-2">ProResumes.ca</h1>
+          <p className="opacity-90">Canada's #1 Resume Writing Service</p>
+        </div>
+        <div className="space-y-6">
+          <h2 className="text-4xl font-bold leading-tight">
+            Welcome back! Let's continue building your career.
+          </h2>
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="w-5 h-5 text-green-400" />
+              <span>Track your order status</span>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input 
-                id="password" 
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className={errors.password && !password ? "border-red-500" : ""}
-              />
-              {errors.password && !password && (
-                <p className="text-xs text-red-500 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" /> {errors.password}
-                </p>
-              )}
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="w-5 h-5 text-green-400" />
+              <span>Message your writer directly</span>
             </div>
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="w-5 h-5 text-green-400" />
+              <span>Download your documents</span>
+            </div>
+          </div>
+        </div>
+        <p className="text-sm opacity-70">
+          © 2025 ProResumes.ca. All rights reserved.
+        </p>
+      </div>
 
-            {/* reCAPTCHA Mockup */}
-            <div className="border rounded-lg p-4 bg-secondary/20 space-y-3">
-              <div className="flex items-start gap-3">
-                <Checkbox 
-                  id="captcha"
-                  checked={captchaChecked}
-                  onCheckedChange={(checked) => {
-                    setCaptchaChecked(!!checked);
-                    if (checked) {
-                      const newErrors = { ...errors };
-                      delete newErrors.password;
-                      setErrors(newErrors);
-                    }
-                  }}
+      <div className="flex-1 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl font-bold">Sign In</CardTitle>
+            <CardDescription>
+              Enter your credentials to access your account
+            </CardDescription>
+          </CardHeader>
+          <form onSubmit={handleLogin}>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <Input 
+                  id="username" 
+                  type="text" 
+                  placeholder="Enter your username" 
+                  value={formData.username}
+                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                  required 
+                  data-testid="input-username"
                 />
-                <div className="flex-1">
-                  <Label htmlFor="captcha" className="cursor-pointer font-normal">
-                    <span className="font-medium">I'm not a robot</span>
-                  </Label>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    reCAPTCHA (mock) • Privacy Policy
-                  </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input 
+                  id="password" 
+                  type="password" 
+                  placeholder="Enter your password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  required 
+                  data-testid="input-password"
+                />
+              </div>
+            </CardContent>
+            <CardFooter className="flex flex-col gap-4">
+              <Button className="w-full" type="submit" disabled={isLoading} data-testid="button-login">
+                {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Sign In
+              </Button>
+              
+              <div className="relative w-full">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">Quick Login (Demo)</span>
                 </div>
               </div>
-              {errors.password && !password && (
-                <p className="text-xs text-red-500 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" /> {errors.password}
-                </p>
-              )}
-            </div>
-          </CardContent>
-          <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full" data-testid="button-signin">Sign In</Button>
-            
-            <div className="relative w-full">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">Quick Login</span>
-              </div>
-            </div>
 
-            <div className="grid grid-cols-3 gap-2 w-full">
-              <Button type="button" variant="outline" size="sm" onClick={() => handleQuickLogin("admin")}>
-                Admin
-              </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => handleQuickLogin("writer")}>
-                Writer
-              </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => handleQuickLogin("client")}>
-                Client
-              </Button>
-            </div>
-            
-            <div className="text-xs text-center text-muted-foreground mt-2">
-              <p>One-click login for testing</p>
-            </div>
-          </CardFooter>
-        </form>
-      </Card>
+              <div className="grid grid-cols-3 gap-2 w-full">
+                <Button type="button" variant="outline" size="sm" onClick={() => handleQuickLogin("admin")} disabled={isLoading}>
+                  Admin
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => handleQuickLogin("writer")} disabled={isLoading}>
+                  Writer
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => handleQuickLogin("client")} disabled={isLoading}>
+                  Client
+                </Button>
+              </div>
+
+              <p className="text-sm text-center text-muted-foreground">
+                Don't have an account?{" "}
+                <Link to="/signup" className="text-primary hover:underline font-medium">
+                  Sign up
+                </Link>
+              </p>
+            </CardFooter>
+          </form>
+        </Card>
+      </div>
     </div>
   );
 }
