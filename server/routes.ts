@@ -13,18 +13,26 @@ const SESSION_SECRET = process.env.SESSION_SECRET || "proresumes-secret-key-chan
 passport.use(
   new LocalStrategy(async (username, password, done) => {
     try {
+      console.log("Login attempt for username:", username);
       const user = await storage.getUserByUsername(username);
+      console.log("User found:", user ? "yes" : "no");
       if (!user) {
         return done(null, false, { message: "Invalid username or password" });
       }
       
+      console.log("Comparing passwords...");
+      console.log("Input password:", password);
+      console.log("Stored hash:", user.password);
+      console.log("Hash length:", user.password.length);
       const isValid = await bcrypt.compare(password, user.password);
+      console.log("Password valid:", isValid);
       if (!isValid) {
         return done(null, false, { message: "Invalid username or password" });
       }
       
       return done(null, user);
     } catch (err) {
+      console.error("Login error:", err);
       return done(err);
     }
   })
