@@ -6,7 +6,6 @@ import { Strategy as LocalStrategy } from "passport-local";
 import session from "express-session";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { WebSocketServer, WebSocket } from "ws";
 import { insertUserSchema, insertLeadSchema, insertOrderSchema, insertMessageSchema, insertDocumentSchema } from "@shared/schema";
 
 const SESSION_SECRET = process.env.SESSION_SECRET || "proresumes-secret-key-change-in-production";
@@ -332,32 +331,6 @@ export async function registerRoutes(
     } catch (error) {
       res.status(500).json({ message: "Error updating admin settings" });
     }
-  });
-
-  const wss = new WebSocketServer({ server: httpServer });
-  
-  wss.on("connection", (ws: WebSocket) => {
-    console.log("WebSocket client connected");
-    
-    ws.on("message", async (data: string) => {
-      try {
-        const message = JSON.parse(data.toString());
-        
-        if (message.type === "chat") {
-          wss.clients.forEach((client) => {
-            if (client.readyState === WebSocket.OPEN) {
-              client.send(JSON.stringify(message));
-            }
-          });
-        }
-      } catch (error) {
-        console.error("WebSocket error:", error);
-      }
-    });
-    
-    ws.on("close", () => {
-      console.log("WebSocket client disconnected");
-    });
   });
 
   return httpServer;

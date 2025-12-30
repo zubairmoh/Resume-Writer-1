@@ -4,98 +4,98 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
-import { CheckCircle2, ArrowRight, Loader2, Mail } from "lucide-react";
-import { useNavigate, Link } from "react-router-dom";
-import { useApp } from "@/lib/store";
+import { CheckCircle2, Loader2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/lib/auth";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
 
 export function AuthPage() {
   const navigate = useNavigate();
-  const { login } = useApp();
+  const { login, signup } = useAuth();
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [step, setStep] = useState<"auth" | "verify">("auth");
-  const [email, setEmail] = useState("");
+  
+  const [loginData, setLoginData] = useState({ username: "", password: "" });
+  const [signupData, setSignupData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+  });
 
-  const handleAuth = async (e: React.FormEvent, type: "login" | "signup") => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate API delay
-    setTimeout(() => {
-      setIsLoading(false);
-      if (type === "signup") {
-        setStep("verify");
-      } else {
-        login(email || "client@example.com", "client");
-        navigate("/dashboard");
-      }
-    }, 1500);
-  };
-
-  const handleVerify = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      login(email, "client");
-      navigate("/checkout"); // Redirect to checkout after signup
-    }, 1500);
-  };
-
-  const handleQuickLogin = (role: "admin" | "writer" | "client") => {
-    if (role === "admin") {
-      login("admin@resumepro.com", "admin");
-      navigate("/admin");
-    } else if (role === "writer") {
-      login("writer@proresumes.ca", "writer");
-      navigate("/writer");
-    } else {
-      login("user@example.com", "client");
+    try {
+      await login(loginData.username, loginData.password);
       navigate("/dashboard");
+      toast({ title: "Welcome back!", description: "Successfully logged in." });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Login failed",
+        description: error.message || "Invalid credentials",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  if (step === "verify") {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Mail className="w-6 h-6 text-primary" />
-            </div>
-            <CardTitle>Verify your email</CardTitle>
-            <CardDescription>
-              We sent a verification code to <span className="font-medium text-foreground">{email}</span>
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleVerify} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="code">Verification Code</Label>
-                <Input id="code" placeholder="123456" className="text-center text-lg tracking-widest" />
-                <p className="text-xs text-muted-foreground text-center">
-                  For this demo, enter any code.
-                </p>
-              </div>
-              <Button className="w-full" type="submit" disabled={isLoading}>
-                {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                Verify Email
-              </Button>
-            </form>
-          </CardContent>
-          <CardFooter className="justify-center">
-            <Button variant="link" onClick={() => setStep("auth")} className="text-sm text-muted-foreground">
-              Back to Sign Up
-            </Button>
-          </CardFooter>
-        </Card>
-      </div>
-    );
-  }
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    try {
+      const username = signupData.email.split("@")[0];
+      await signup({
+        username,
+        email: signupData.email,
+        password: signupData.password,
+        fullName: `${signupData.firstName} ${signupData.lastName}`,
+        role: "client",
+      });
+      navigate("/checkout");
+      toast({ title: "Account created!", description: "Welcome to ProResumes.ca" });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Signup failed",
+        description: error.message || "Could not create account",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleQuickLogin = async (role: "admin" | "writer" | "client") => {
+    setIsLoading(true);
+    try {
+      if (role === "admin") {
+        await login("admin", "admin123");
+        navigate("/admin");
+      } else if (role === "writer") {
+        await login("writer", "writer123");
+        navigate("/writer");
+      } else {
+        await login("client", "client123");
+        navigate("/dashboard");
+      }
+      toast({ title: "Quick login successful" });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Quick login failed",
+        description: error.message,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
-      {/* Left Side - Visual */}
       <div className="hidden md:flex flex-1 bg-primary text-primary-foreground flex-col justify-between p-12">
         <div>
           <h1 className="text-2xl font-bold font-display mb-2">ProResumes.ca</h1>
@@ -125,7 +125,6 @@ export function AuthPage() {
         </p>
       </div>
 
-      {/* Right Side - Form */}
       <div className="flex-1 flex items-center justify-center p-4">
         <Card className="w-full max-w-md border-none shadow-none bg-transparent">
           <CardHeader>
@@ -142,23 +141,31 @@ export function AuthPage() {
               </TabsList>
               
               <TabsContent value="login">
-                <form onSubmit={(e) => handleAuth(e, "login")} className="space-y-4">
+                <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email">Username or Email</Label>
                     <Input 
                       id="email" 
-                      type="email" 
+                      type="text" 
                       placeholder="john@example.com" 
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      value={loginData.username}
+                      onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
                       required 
+                      data-testid="input-username"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="password">Password</Label>
-                    <Input id="password" type="password" required />
+                    <Input 
+                      id="password" 
+                      type="password" 
+                      value={loginData.password}
+                      onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                      required 
+                      data-testid="input-password"
+                    />
                   </div>
-                  <Button className="w-full" type="submit" disabled={isLoading}>
+                  <Button className="w-full" type="submit" disabled={isLoading} data-testid="button-login">
                     {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Sign In"}
                   </Button>
                   
@@ -172,13 +179,13 @@ export function AuthPage() {
                   </div>
 
                   <div className="grid grid-cols-3 gap-2 w-full">
-                    <Button type="button" variant="outline" size="sm" onClick={() => handleQuickLogin("admin")}>
+                    <Button type="button" variant="outline" size="sm" onClick={() => handleQuickLogin("admin")} disabled={isLoading}>
                       Admin
                     </Button>
-                    <Button type="button" variant="outline" size="sm" onClick={() => handleQuickLogin("writer")}>
+                    <Button type="button" variant="outline" size="sm" onClick={() => handleQuickLogin("writer")} disabled={isLoading}>
                       Writer
                     </Button>
-                    <Button type="button" variant="outline" size="sm" onClick={() => handleQuickLogin("client")}>
+                    <Button type="button" variant="outline" size="sm" onClick={() => handleQuickLogin("client")} disabled={isLoading}>
                       Client
                     </Button>
                   </div>
@@ -186,31 +193,53 @@ export function AuthPage() {
               </TabsContent>
 
               <TabsContent value="signup">
-                <form onSubmit={(e) => handleAuth(e, "signup")} className="space-y-4">
-                   <div className="grid grid-cols-2 gap-4">
-                     <div className="space-y-2">
-                       <Label htmlFor="first-name">First Name</Label>
-                       <Input id="first-name" placeholder="John" required />
-                     </div>
-                     <div className="space-y-2">
-                       <Label htmlFor="last-name">Last Name</Label>
-                       <Input id="last-name" placeholder="Doe" required />
-                     </div>
-                   </div>
+                <form onSubmit={handleSignup} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="first-name">First Name</Label>
+                      <Input 
+                        id="first-name" 
+                        placeholder="John" 
+                        value={signupData.firstName}
+                        onChange={(e) => setSignupData({ ...signupData, firstName: e.target.value })}
+                        required 
+                        data-testid="input-firstname"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="last-name">Last Name</Label>
+                      <Input 
+                        id="last-name" 
+                        placeholder="Doe" 
+                        value={signupData.lastName}
+                        onChange={(e) => setSignupData({ ...signupData, lastName: e.target.value })}
+                        required 
+                        data-testid="input-lastname"
+                      />
+                    </div>
+                  </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-email">Email</Label>
                     <Input 
                       id="signup-email" 
                       type="email" 
                       placeholder="john@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      value={signupData.email}
+                      onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
                       required 
+                      data-testid="input-email"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-password">Create Password</Label>
-                    <Input id="signup-password" type="password" required />
+                    <Input 
+                      id="signup-password" 
+                      type="password" 
+                      value={signupData.password}
+                      onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
+                      required 
+                      data-testid="input-create-password"
+                    />
                   </div>
                   <div className="flex items-center space-x-2">
                     <Checkbox id="terms" required />
@@ -218,10 +247,10 @@ export function AuthPage() {
                       htmlFor="terms"
                       className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
-                      I agree to the <Link to="/terms" className="text-primary hover:underline">Terms and Conditions</Link>
+                      I agree to the <a href="/terms" className="text-primary hover:underline">Terms and Conditions</a>
                     </label>
                   </div>
-                  <Button className="w-full" type="submit" disabled={isLoading}>
+                  <Button className="w-full" type="submit" disabled={isLoading} data-testid="button-signup">
                     {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Create Account"}
                   </Button>
                 </form>
