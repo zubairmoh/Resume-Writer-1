@@ -1,53 +1,158 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
+import { Switch } from "@/components/ui/switch";
+import { useAdminSettings, useUpdateAdminSettings } from "@/lib/hooks";
+import { toast } from "@/hooks/use-toast";
+import { Loader2, Plus, Trash2 } from "lucide-react";
 
-export function AdminManagement() {
-  const { toast } = useToast();
-  const [newAdmin, setNewAdmin] = useState({ username: "", password: "", fullName: "" });
+export function AdminSettings() {
+  const { data: settings, isLoading } = useAdminSettings();
+  const updateSettings = useUpdateAdminSettings();
+  
+  const [formData, setFormData] = useState({
+    // ... your existing fields ...
+    stripePublishableKey: "",
+    stripeSecretKey: "",
+    paypalClientId: "",
+    paypalClientSecret: "",
+    businessEmail: "",
+    businessPhone: "",
+    businessAddress: "",
+    fomoEnabled: true,
+    chatWidgetEnabled: true,
+    notificationEmail: "",
+    smtpHost: "",
+    smtpPort: "",
+    smtpUser: "",
+    smtpPass: "",
+    browseNotificationsEnabled: false,
+    
+    // NEW FIELDS FOR PRICING
+    packages: [
+      { id: "basic", name: "Basic", price: 99, description: "Professional Resume" },
+      { id: "pro", name: "Professional", price: 199, description: "Resume + Cover Letter" },
+      { id: "exec", name: "Executive", price: 299, description: "Full Career Suite" }
+    ],
+    // NEW FIELDS FOR ADMIN MANAGEMENT
+    newAdmin: { username: "", password: "", fullName: "" }
+  });
 
-  const handleCreateAdmin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  useEffect(() => {
+    if (settings) {
+      setFormData(prev => ({
+        ...prev,
+        ...settings,
+        smtpPort: settings.smtpPort?.toString() || "",
+        packages: settings.packages || prev.packages,
+      }));
+    }
+  }, [settings]);
+
+  const handlePriceChange = (id: string, newPrice: string) => {
+    const updatedPackages = formData.packages.map(pkg => 
+      pkg.id === id ? { ...pkg, price: parseInt(newPrice) || 0 } : pkg
+    );
+    setFormData({ ...formData, packages: updatedPackages });
+  };
+
+  const handleSave = async () => {
     try {
-      // Replace with your actual API call
-      // await api.createAdmin(newAdmin);
-      toast({ title: "Success", description: "New administrator added." });
-      setNewAdmin({ username: "", password: "", fullName: "" });
-    } catch (error) {
-      toast({ variant: "destructive", title: "Error", description: "Failed to add admin." });
+      const dataToSave = {
+        ...formData,
+        smtpPort: formData.smtpPort ? parseInt(formData.smtpPort) : undefined,
+      };
+      await updateSettings.mutateAsync(dataToSave);
+      toast({ title: "Settings saved", description: "Pricing and configuration updated." });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Error saving settings", description: error.message });
     }
   };
 
+  if (isLoading) {
+    return <div className="flex items-center justify-center p-8"><Loader2 className="w-6 h-6 animate-spin" /></div>;
+  }
+
   return (
-    <div className="p-6 bg-white rounded-lg shadow-sm border">
-      <h3 className="text-lg font-bold mb-4">Add New Administrator</h3>
-      <form onSubmit={handleCreateAdmin} className="space-y-4">
-        <div>
-          <Label>Full Name</Label>
-          <Input 
-            value={newAdmin.fullName} 
-            onChange={e => setNewAdmin({...newAdmin, fullName: e.target.value})} 
-          />
-        </div>
-        <div>
-          <Label>Username/Email</Label>
-          <Input 
-            value={newAdmin.username} 
-            onChange={e => setNewAdmin({...newAdmin, username: e.target.value})} 
-          />
-        </div>
-        <div>
-          <Label>Password</Label>
-          <Input 
-            type="password" 
-            value={newAdmin.password} 
-            onChange={e => setNewAdmin({...newAdmin, password: e.target.value})} 
-          />
-        </div>
-        <Button type="submit">Create Admin Account</Button>
-      </form>
+    <div className="space-y-6 max-w-3xl pb-20">
+      {/* SECTION 1: PACKAGE PRICING */}
+      <Card className="border-blue-200 bg-blue-50/30">
+        <CardHeader>
+          <CardTitle>Package Pricing</CardTitle>
+          <CardDescription>Update the prices shown on your landing page</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {formData.packages.map((pkg) => (
+            <div key={pkg.id} className="grid grid-cols-3 gap-4 items-end border-b pb-4 last:border-0">
+              <div className="space-y-2">
+                <Label>{pkg.name} Package ($)</Label>
+                <Input 
+                  type="number" 
+                  value={pkg.price} 
+                  onChange={(e) => handlePriceChange(pkg.id, e.target.value)}
+                />
+              </div>
+              <div className="col-span-2 space-y-2">
+                <Label>Description</Label>
+                <Input value={pkg.description} readOnly className="bg-slate-100" />
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      {/* SECTION 2: ADD NEW ADMINS */}
+      <Card className="border-green-200">
+        <CardHeader>
+          <CardTitle>Admin User Management</CardTitle>
+          <CardDescription>Create additional accounts with administrative access</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+           <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Full Name</Label>
+                <Input 
+                  placeholder="John Doe"
+                  value={formData.newAdmin.fullName}
+                  onChange={(e) => setFormData({...formData, newAdmin: {...formData.newAdmin, fullName: e.target.value}})}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Username</Label>
+                <Input 
+                  placeholder="johndoe_admin"
+                  value={formData.newAdmin.username}
+                  onChange={(e) => setFormData({...formData, newAdmin: {...formData.newAdmin, username: e.target.value}})}
+                />
+              </div>
+           </div>
+           <div className="space-y-2">
+              <Label>Password</Label>
+              <Input 
+                type="password"
+                value={formData.newAdmin.password}
+                onChange={(e) => setFormData({...formData, newAdmin: {...formData.newAdmin, password: e.target.value}})}
+              />
+           </div>
+           <Button variant="secondary" className="w-full">
+             <Plus className="w-4 h-4 mr-2" /> Invite Administrator
+           </Button>
+        </CardContent>
+      </Card>
+
+      {/* REMAINDER OF YOUR EXISTING CARDS (Payment, Business Info, etc.) */}
+      {/* ... keep the rest of your original code here ... */}
+
+      <Button 
+        onClick={handleSave} 
+        className="w-full sticky bottom-4 shadow-lg" 
+        disabled={updateSettings.isPending}
+      >
+        {updateSettings.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+        Save All Changes
+      </Button>
     </div>
   );
 }
