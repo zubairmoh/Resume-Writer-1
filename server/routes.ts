@@ -69,17 +69,19 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  app.use(
-    session({
-      secret: SESSION_SECRET,
-      resave: false,
-      saveUninitialized: false,
-      cookie: {
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 1000 * 60 * 60 * 24 * 7,
-      },
-    })
-  );
+app.use(
+  session({
+    secret: SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    proxy: true, // ADD THIS LINE for Render/Heroku
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax", // ADD THIS LINE
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+    },
+  })
+);
 
   app.use(passport.initialize());
   app.use(passport.session());
