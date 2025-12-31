@@ -119,6 +119,25 @@ export type InsertDocument = z.infer<typeof insertDocumentSchema>;
 export type Document = typeof documents.$inferSelect;
 
 // Look for export const adminSettings = pgTable("admin_settings", { ... })
+// Add this near your adminSettings table definition in shared/schema.ts
+
+export const packageSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  price: z.number(),
+  description: z.string(),
+});
+
+// This ensures our insert schema validates the packages array correctly
+export const insertAdminSettingsSchema = createInsertSchema(adminSettings, {
+  packages: z.array(packageSchema).optional(),
+  smtpPort: z.number().optional(),
+}).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type InsertAdminSettings = z.infer<typeof insertAdminSettingsSchema>;
 
 export const adminSettings = pgTable("admin_settings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
