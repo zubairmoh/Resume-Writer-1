@@ -118,6 +118,8 @@ export const insertDocumentSchema = createInsertSchema(documents).omit({
 export type InsertDocument = z.infer<typeof insertDocumentSchema>;
 export type Document = typeof documents.$inferSelect;
 
+// Look for export const adminSettings = pgTable("admin_settings", { ... })
+
 export const adminSettings = pgTable("admin_settings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   stripePublishableKey: text("stripe_publishable_key"),
@@ -135,6 +137,15 @@ export const adminSettings = pgTable("admin_settings", {
   smtpUser: text("smtp_user"),
   smtpPass: text("smtp_pass"),
   browseNotificationsEnabled: boolean("browse_notifications_enabled").default(false),
+  
+  // NEW FIELD: Stores pricing and package details as JSON
+  // Example: [{ id: "basic", name: "Basic", price: 99 }, ...]
+  packages: jsonb("packages").default([
+    { id: "basic", name: "Basic", price: 99, description: "Professional Resume" },
+    { id: "pro", name: "Professional", price: 199, description: "Resume + Cover Letter" },
+    { id: "exec", name: "Executive", price: 299, description: "Full Career Suite" }
+  ]),
+
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
