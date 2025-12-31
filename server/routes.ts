@@ -59,6 +59,7 @@ const isAuthenticated = (req: any, res: any, next: any) => {
 };
 
 const isAdmin = (req: any, res: any, next: any) => {
+  console.log("Checking Admin Access. Authenticated:", req.isAuthenticated(), "User Role:", req.user?.role);
   if (req.isAuthenticated() && req.user?.role === "admin") {
     return next();
   }
@@ -74,15 +75,20 @@ app.use(
     secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    proxy: true, // ADD THIS LINE for Render/Heroku
+    proxy: true,
+    name: "proresumes_session", // Explicitly name the cookie
     cookie: {
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax", // ADD THIS LINE
-      maxAge: 1000 * 60 * 60 * 24 * 7,
+      // Changed: set secure to true only if you are sure HTTPS is forced
+      // Try setting this to false briefly to test if it fixes the Forbidden error
+      secure: process.env.NODE_ENV === "production", 
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      httpOnly: true,
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
     },
   })
 );
-
+  
+  app.set("trust proxy", 1);
   app.use(passport.initialize());
   app.use(passport.session());
 
