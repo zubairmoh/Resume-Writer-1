@@ -129,15 +129,7 @@ export const packageSchema = z.object({
 });
 
 // This ensures our insert schema validates the packages array correctly
-export const insertAdminSettingsSchema = createInsertSchema(adminSettings, {
-  packages: z.array(packageSchema).optional(),
-  smtpPort: z.number().optional(),
-}).omit({
-  id: true,
-  updatedAt: true,
-});
 
-export type InsertAdminSettings = z.infer<typeof insertAdminSettingsSchema>;
 
 export const adminSettings = pgTable("admin_settings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -167,6 +159,17 @@ export const adminSettings = pgTable("admin_settings", {
 
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+
+export const insertAdminSettingsSchema = createInsertSchema(adminSettings, {
+  packages: z.array(packageSchema).optional(),
+  smtpPort: z.number().optional(),
+}).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type InsertAdminSettings = z.infer<typeof insertAdminSettingsSchema>;
+export type AdminSettings = typeof adminSettings.$inferSelect;
 
 export const addons = pgTable("addons", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
