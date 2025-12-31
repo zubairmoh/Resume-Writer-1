@@ -129,7 +129,7 @@ export const packageSchema = z.object({
 });
 
 // This ensures our insert schema validates the packages array correctly
-
+// --- START REPLACING FROM ADMIN SETTINGS TABLE DOWNWARD ---
 
 export const adminSettings = pgTable("admin_settings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -148,18 +148,23 @@ export const adminSettings = pgTable("admin_settings", {
   smtpUser: text("smtp_user"),
   smtpPass: text("smtp_pass"),
   browseNotificationsEnabled: boolean("browse_notifications_enabled").default(false),
-  
-  // NEW FIELD: Stores pricing and package details as JSON
-  // Example: [{ id: "basic", name: "Basic", price: 99 }, ...]
   packages: jsonb("packages").default([
     { id: "basic", name: "Basic", price: 99, description: "Professional Resume" },
     { id: "pro", name: "Professional", price: 199, description: "Resume + Cover Letter" },
     { id: "exec", name: "Executive", price: 299, description: "Full Career Suite" }
   ]),
-
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Zod Schema for individual packages
+export const packageSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  price: z.number(),
+  description: z.string(),
+});
+
+// The ONLY export for insertAdminSettingsSchema
 export const insertAdminSettingsSchema = createInsertSchema(adminSettings, {
   packages: z.array(packageSchema).optional(),
   smtpPort: z.number().optional(),
@@ -170,6 +175,8 @@ export const insertAdminSettingsSchema = createInsertSchema(adminSettings, {
 
 export type InsertAdminSettings = z.infer<typeof insertAdminSettingsSchema>;
 export type AdminSettings = typeof adminSettings.$inferSelect;
+
+// --- KEEP THE REST OF THE TABLES BELOW (addons, widgetLayouts, etc.) ---
 
 export const addons = pgTable("addons", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -207,14 +214,6 @@ export const insertOrderAddonSchema = createInsertSchema(orderAddons).omit({
 
 export type InsertOrderAddon = z.infer<typeof insertOrderAddonSchema>;
 export type OrderAddon = typeof orderAddons.$inferSelect;
-
-export const insertAdminSettingsSchema = createInsertSchema(adminSettings).omit({
-  id: true,
-  updatedAt: true,
-});
-
-export type InsertAdminSettings = z.infer<typeof insertAdminSettingsSchema>;
-export type AdminSettings = typeof adminSettings.$inferSelect;
 
 export const widgetLayouts = pgTable("widget_layouts", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
