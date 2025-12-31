@@ -3,6 +3,7 @@ import { pgTable, text, varchar, timestamp, integer, boolean, jsonb } from "driz
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// --- USER & AUTH TABLES ---
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
@@ -21,6 +22,7 @@ export const insertUserSchema = createInsertSchema(users).omit({
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
+// --- LEADS & ORDERS TABLES ---
 export const leads = pgTable("leads", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
@@ -78,6 +80,7 @@ export const insertOrderSchema = createInsertSchema(orders).omit({
 export type InsertOrder = z.infer<typeof insertOrderSchema>;
 export type Order = typeof orders.$inferSelect;
 
+// --- COMMUNICATION & DOCUMENTS ---
 export const messages = pgTable("messages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   orderId: varchar("order_id").references(() => orders.id),
@@ -118,18 +121,13 @@ export const insertDocumentSchema = createInsertSchema(documents).omit({
 export type InsertDocument = z.infer<typeof insertDocumentSchema>;
 export type Document = typeof documents.$inferSelect;
 
-// Look for export const adminSettings = pgTable("admin_settings", { ... })
-// Add this near your adminSettings table definition in shared/schema.ts
-
+// --- ADMIN SETTINGS & PRICING ---
 export const packageSchema = z.object({
   id: z.string(),
   name: z.string(),
   price: z.number(),
   description: z.string(),
 });
-
-// This ensures our insert schema validates the packages array correctly
-// --- START REPLACING FROM ADMIN SETTINGS TABLE DOWNWARD ---
 
 export const adminSettings = pgTable("admin_settings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -156,15 +154,6 @@ export const adminSettings = pgTable("admin_settings", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Zod Schema for individual packages
-export const packageSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  price: z.number(),
-  description: z.string(),
-});
-
-// The ONLY export for insertAdminSettingsSchema
 export const insertAdminSettingsSchema = createInsertSchema(adminSettings, {
   packages: z.array(packageSchema).optional(),
   smtpPort: z.number().optional(),
@@ -176,8 +165,7 @@ export const insertAdminSettingsSchema = createInsertSchema(adminSettings, {
 export type InsertAdminSettings = z.infer<typeof insertAdminSettingsSchema>;
 export type AdminSettings = typeof adminSettings.$inferSelect;
 
-// --- KEEP THE REST OF THE TABLES BELOW (addons, widgetLayouts, etc.) ---
-
+// --- ADDONS & WIDGETS ---
 export const addons = pgTable("addons", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
