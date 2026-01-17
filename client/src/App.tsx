@@ -46,7 +46,14 @@ function App() {
                     </ProtectedRoute>
                   } 
                 />
-                
+                 <Route 
+                  path="/my-dashboard" 
+                  element={
+                    <ProtectedRoute>
+                      <DashboardPage />
+                    </ProtectedRoute>
+                  } 
+                />
                 <Route 
                   path="/checkout" 
                   element={
