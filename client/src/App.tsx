@@ -19,6 +19,31 @@ import { CheckoutPage } from "./pages/Checkout";
 import { LegalPage } from "./pages/Legal";
 import NotFound from "./pages/not-found";
 import { ProtectedRoute } from "./pages/ProtectedRoute";
+import { Navigate } from "react-router-dom";
+
+// Role-based dashboard router - redirects to the correct dashboard based on user role
+function RoleBasedDashboard() {
+  const { user, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
+  
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  // Redirect based on role
+  switch (user.role) {
+    case 'admin':
+      return <Navigate to="/admin" replace />;
+    case 'writer':
+      return <Navigate to="/writer" replace />;
+    case 'client':
+    default:
+      return <Navigate to="/dashboard" replace />;
+  }
+}
 
 function ImpersonationBanner() {
   const { user, stopImpersonating } = useAuth();
@@ -78,7 +103,7 @@ function AppRoutes() {
           path="/my-dashboard" 
           element={
             <ProtectedRoute>
-              <DashboardPage />
+              <RoleBasedDashboard />
             </ProtectedRoute>
           } 
         />
