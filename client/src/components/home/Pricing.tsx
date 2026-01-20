@@ -1,19 +1,22 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Check } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useAdminSettings } from "@/lib/hooks";
 
-const TIERS = [
+const DEFAULT_TIERS = [
   {
+    id: "basic",
     name: "Entry",
     price: 99,
     description: "Perfect for recent graduates and early career professionals.",
     features: ["Professional Resume Rewrite", "ATS Optimization", "Word & PDF Formats", "30-Day Revision Period"]
   },
   {
+    id: "pro",
     name: "Professional",
     price: 199,
     description: "Ideal for mid-level professionals looking to climb the ladder.",
@@ -21,6 +24,7 @@ const TIERS = [
     popular: true
   },
   {
+    id: "exec",
     name: "Executive",
     price: 299,
     description: "For C-suite executives and senior leadership roles.",
@@ -30,11 +34,24 @@ const TIERS = [
 
 export function Pricing() {
   const navigate = useNavigate();
-  const [selectedTier, setSelectedTier] = useState("Professional");
+  const { data: settings, isLoading } = useAdminSettings();
+  const [selectedTier, setSelectedTier] = useState("pro");
   const [addOns, setAddOns] = useState({
     coverLetter: false,
     linkedin: false
   });
+
+  const [tiers, setTiers] = useState(DEFAULT_TIERS);
+
+  useEffect(() => {
+    if (settings?.packages && Array.isArray(settings.packages)) {
+      const updatedTiers = DEFAULT_TIERS.map(tier => {
+        const settingPkg = settings.packages?.find((p: any) => p.id === tier.id);
+        return settingPkg ? { ...tier, price: settingPkg.price } : tier;
+      });
+      setTiers(updatedTiers);
+    }
+  }, [settings]);
 
   const getPrice = (basePrice: number) => {
     let total = basePrice;
@@ -42,6 +59,14 @@ export function Pricing() {
     if (addOns.linkedin) total += 75;
     return total;
   };
+
+  if (isLoading) {
+    return (
+      <div className="py-24 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <section className="py-24" id="pricing">
@@ -83,17 +108,17 @@ export function Pricing() {
         </div>
 
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {TIERS.map((tier) => {
-            const isSelected = selectedTier === tier.name;
+          {tiers.map((tier) => {
+            const isSelected = selectedTier === tier.id;
             const finalPrice = getPrice(tier.price);
 
             return (
               <Card 
-                key={tier.name}
-                className={`relative transition-all duration-300 ${
+                key={tier.id}
+                className={`relative transition-all duration-300 cursor-pointer ${
                   tier.popular ? "border-primary shadow-lg scale-105 z-10" : "border-border hover:border-primary/50"
-                }`}
-                onClick={() => setSelectedTier(tier.name)}
+                } ${isSelected ? "ring-2 ring-primary" : ""}`}
+                onClick={() => setSelectedTier(tier.id)}
               >
                 {tier.popular && (
                   <div className="absolute -top-4 left-0 right-0 flex justify-center">
@@ -141,13 +166,13 @@ export function Pricing() {
                     onClick={(e) => {
                       e.stopPropagation();
                       const params = new URLSearchParams({
-                        package: tier.name.toLowerCase(),
+                        package: tier.id,
                         coverLetter: addOns.coverLetter.toString(),
                         linkedin: addOns.linkedin.toString(),
                       });
                       navigate(`/checkout?${params.toString()}`);
                     }}
-                    data-testid={`button-get-started-${tier.name.toLowerCase()}`}
+                    data-testid={`button-get-started-${tier.id}`}
                   >
                     Get Started
                   </Button>

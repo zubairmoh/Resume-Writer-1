@@ -4,13 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { useAdminSettings, useUpdateAdminSettings } from "@/lib/hooks";
+import { useAdminSettings, useUpdateAdminSettings, useCreateUser } from "@/lib/hooks";
 import { toast } from "@/hooks/use-toast";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 
 export function AdminSettings() {
   const { data: settings, isLoading } = useAdminSettings();
   const updateSettings = useUpdateAdminSettings();
+  const createUser = useCreateUser();
   
   const [formData, setFormData] = useState({
     // ... your existing fields ...
@@ -60,14 +61,34 @@ export function AdminSettings() {
 
   const handleSave = async () => {
     try {
+      const { newAdmin, ...settingsData } = formData;
       const dataToSave = {
-        ...formData,
+        ...settingsData,
         smtpPort: formData.smtpPort ? parseInt(formData.smtpPort) : undefined,
       };
       await updateSettings.mutateAsync(dataToSave);
       toast({ title: "Settings saved", description: "Pricing and configuration updated." });
     } catch (error: any) {
       toast({ variant: "destructive", title: "Error saving settings", description: error.message });
+    }
+  };
+
+  const handleInviteAdmin = async () => {
+    if (!formData.newAdmin.username || !formData.newAdmin.password || !formData.newAdmin.fullName) {
+      toast({ variant: "destructive", title: "Missing fields", description: "Please fill in all admin details." });
+      return;
+    }
+
+    try {
+      await createUser.mutateAsync({
+        ...formData.newAdmin,
+        email: `${formData.newAdmin.username}@proresumes.ca`, // Placeholder email
+        role: "admin"
+      });
+      toast({ title: "Admin Created", description: `${formData.newAdmin.fullName} is now an administrator.` });
+      setFormData({ ...formData, newAdmin: { username: "", password: "", fullName: "" } });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Error creating admin", description: error.message });
     }
   };
 
@@ -136,8 +157,14 @@ export function AdminSettings() {
                 onChange={(e) => setFormData({...formData, newAdmin: {...formData.newAdmin, password: e.target.value}})}
               />
            </div>
-           <Button variant="secondary" className="w-full">
-             <Plus className="w-4 h-4 mr-2" /> Invite Administrator
+           <Button 
+             variant="secondary" 
+             className="w-full" 
+             onClick={handleInviteAdmin}
+             disabled={createUser.isPending}
+           >
+             {createUser.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+             Invite Administrator
            </Button>
         </CardContent>
       </Card>

@@ -36,7 +36,7 @@ export function OrderHistory({ orders }: OrderHistoryProps) {
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {order.tier} • ${order.total} • {order.date}
+                    {order.packageType} • ${order.price} • {new Date(order.createdAt).toLocaleDateString()}
                   </p>
                 </div>
                 {order.status === "Completed" && (

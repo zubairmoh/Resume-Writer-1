@@ -315,8 +315,8 @@ export function AdminPage() {
           <TabsTrigger value="leads" className="flex items-center gap-2">
             <FileText className="w-4 h-4" /> Leads
           </TabsTrigger>
-          <TabsTrigger value="chat-logs" className="flex items-center gap-2">
-            <MessageCircle className="w-4 h-4" /> Chat Logs
+          <TabsTrigger value="live-chat" className="flex items-center gap-2">
+            <MessageCircle className="w-4 h-4" /> Live Chat
           </TabsTrigger>
           <TabsTrigger value="users" className="flex items-center gap-2">
             <Settings className="w-4 h-4" /> User Roles

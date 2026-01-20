@@ -2,16 +2,15 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Eye, Download, Trash2, Upload } from "lucide-react";
+import { FileText, Eye, Download, Trash2, Upload, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { useApp } from "@/lib/store";
+import { useDocuments } from "@/lib/hooks";
 
 export function AdminDocuments({ orderId }: { orderId: string }) {
-  const { documents } = useApp();
-  const [selectedDoc, setSelectedDoc] = useState<string | null>(null);
+  const { data: documents = [], isLoading } = useDocuments(orderId);
+  const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
   
-  const orderDocs = documents.filter((d) => d.orderId === orderId);
-  const selectedDocument = orderDocs.find((d) => d.id === selectedDoc);
+  const selectedDocument = documents.find((d: any) => d.id === selectedDocId);
 
   const docTypeColor = (type: string) => {
     switch (type) {
@@ -28,6 +27,10 @@ export function AdminDocuments({ orderId }: { orderId: string }) {
     }
   };
 
+  if (isLoading) {
+    return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin" /></div>;
+  }
+
   return (
     <div className="space-y-6">
       <Card>
@@ -35,14 +38,14 @@ export function AdminDocuments({ orderId }: { orderId: string }) {
           <CardTitle className="text-lg">Uploaded Documents</CardTitle>
         </CardHeader>
         <CardContent>
-          {orderDocs.length === 0 ? (
+          {documents.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <FileText className="w-12 h-12 text-muted-foreground mb-2 opacity-50" />
               <p className="text-sm text-muted-foreground">No documents uploaded yet</p>
             </div>
           ) : (
             <div className="space-y-2">
-              {orderDocs.map((doc) => (
+              {documents.map((doc: any) => (
                 <div
                   key={doc.id}
                   className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-secondary/50 transition-colors"
@@ -52,15 +55,15 @@ export function AdminDocuments({ orderId }: { orderId: string }) {
                       <FileText className="w-5 h-5 text-muted-foreground" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium">{doc.name}</p>
-                      <p className="text-xs text-muted-foreground">{doc.size} • {doc.uploadedAt}</p>
+                      <p className="text-sm font-medium">{doc.fileName}</p>
+                      <p className="text-xs text-muted-foreground">{(doc.fileSize / 1024).toFixed(1)} KB • {new Date(doc.createdAt).toLocaleDateString()}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className={docTypeColor(doc.type)}>
-                      {doc.type === "coverLetter" ? "Cover Letter" : doc.type}
+                    <Badge variant="outline" className={docTypeColor(doc.fileType)}>
+                      {doc.fileType}
                     </Badge>
-                    <Button size="sm" variant="ghost" onClick={() => setSelectedDoc(doc.id)}>
+                    <Button size="sm" variant="ghost" onClick={() => setSelectedDocId(doc.id)}>
                       <Eye className="w-4 h-4" />
                     </Button>
                   </div>
@@ -86,12 +89,12 @@ export function AdminDocuments({ orderId }: { orderId: string }) {
       </Card>
 
       {/* Document Preview Modal */}
-      <Dialog open={!!selectedDoc} onOpenChange={(open) => !open && setSelectedDoc(null)}>
+      <Dialog open={!!selectedDocId} onOpenChange={(open) => !open && setSelectedDocId(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{selectedDocument?.name}</DialogTitle>
+            <DialogTitle>{selectedDocument?.fileName}</DialogTitle>
             <DialogDescription>
-              Uploaded on {selectedDocument?.uploadedAt} • {selectedDocument?.size}
+              Uploaded on {selectedDocument ? new Date(selectedDocument.createdAt).toLocaleString() : ""} • {selectedDocument ? (selectedDocument.fileSize / 1024).toFixed(1) : 0} KB
             </DialogDescription>
           </DialogHeader>
           {selectedDocument && (
@@ -104,7 +107,11 @@ export function AdminDocuments({ orderId }: { orderId: string }) {
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button className="flex-1">Download</Button>
+                <Button className="flex-1" asChild>
+                  <a href={selectedDocument.fileUrl} target="_blank" rel="noreferrer">
+                    <Download className="w-4 h-4 mr-2" /> Download
+                  </a>
+                </Button>
                 <Button variant="destructive" size="sm">
                   <Trash2 className="w-4 h-4 mr-2" />
                   Delete

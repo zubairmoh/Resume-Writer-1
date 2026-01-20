@@ -90,6 +90,7 @@ export interface AdminSettings {
   smtpUser?: string;
   smtpPass?: string;
   browseNotificationsEnabled?: boolean;
+  packages?: { id: string; name: string; price: number; description: string }[];
   updatedAt?: string;
 }
 

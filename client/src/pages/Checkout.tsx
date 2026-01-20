@@ -4,16 +4,16 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Check, CreditCard, Lock, ShieldCheck, Package } from "lucide-react";
+import { Check, CreditCard, Lock, ShieldCheck, Package, Loader2 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useCreateOrder } from "@/lib/hooks";
+import { useCreateOrder, useAdminSettings } from "@/lib/hooks";
 import { useAuth } from "@/lib/auth";
 import { toast } from "@/hooks/use-toast";
 
-const PACKAGE_PRICES: Record<string, { name: string; price: number; description: string }> = {
-  entry: { name: "Entry", price: 99, description: "Perfect for recent graduates" },
-  professional: { name: "Professional", price: 199, description: "For mid-level professionals" },
-  executive: { name: "Executive", price: 299, description: "For C-suite executives" },
+const DEFAULT_PACKAGE_PRICES: Record<string, { name: string; price: number; description: string }> = {
+  basic: { name: "Entry", price: 99, description: "Perfect for recent graduates" },
+  pro: { name: "Professional", price: 199, description: "For mid-level professionals" },
+  exec: { name: "Executive", price: 299, description: "For C-suite executives" },
 };
 
 const ADDON_PRICES = {
@@ -25,14 +25,29 @@ export function CheckoutPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user, isLoading: authLoading } = useAuth();
+  const { data: settings, isLoading: settingsLoading } = useAdminSettings();
   const createOrder = useCreateOrder();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  const packageType = searchParams.get("package") || "professional";
+  const packageId = searchParams.get("package") || "pro";
   const hasCoverLetter = searchParams.get("coverLetter") === "true";
   const hasLinkedin = searchParams.get("linkedin") === "true";
 
-  const selectedPackage = PACKAGE_PRICES[packageType] || PACKAGE_PRICES.professional;
+  const [packagePrices, setPackagePrices] = useState(DEFAULT_PACKAGE_PRICES);
+
+  useEffect(() => {
+    if (settings?.packages && Array.isArray(settings.packages)) {
+      const updatedPrices = { ...DEFAULT_PACKAGE_PRICES };
+      settings.packages.forEach((pkg: any) => {
+        if (updatedPrices[pkg.id]) {
+          updatedPrices[pkg.id] = { ...updatedPrices[pkg.id], price: pkg.price };
+        }
+      });
+      setPackagePrices(updatedPrices);
+    }
+  }, [settings]);
+
+  const selectedPackage = packagePrices[packageId] || packagePrices.pro;
   
   const addonsTotal = (hasCoverLetter ? ADDON_PRICES.coverLetter.price : 0) + 
                       (hasLinkedin ? ADDON_PRICES.linkedin.price : 0);
@@ -40,9 +55,9 @@ export function CheckoutPage() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      navigate(`/login?redirect=/checkout?package=${packageType}&coverLetter=${hasCoverLetter}&linkedin=${hasLinkedin}`);
+      navigate(`/login?redirect=/checkout?package=${packageId}&coverLetter=${hasCoverLetter}&linkedin=${hasLinkedin}`);
     }
-  }, [user, authLoading, navigate, packageType, hasCoverLetter, hasLinkedin]);
+  }, [user, authLoading, navigate, packageId, hasCoverLetter, hasLinkedin]);
 
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +66,7 @@ export function CheckoutPage() {
       return;
     }
     
-    setIsLoading(true);
+    setIsProcessing(true);
 
     try {
       const addons = [];
@@ -75,12 +90,12 @@ export function CheckoutPage() {
     } catch (error) {
       toast({ title: "Error", description: "Failed to create order. Please try again.", variant: "destructive" });
     } finally {
-      setIsLoading(false);
+      setIsProcessing(false);
     }
   };
 
-  if (authLoading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  if (authLoading || settingsLoading) {
+    return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   }
 
   return (
@@ -244,12 +259,12 @@ export function CheckoutPage() {
                 <Button 
                   type="submit" 
                   className="w-full h-12 text-lg font-semibold"
-                  disabled={isLoading}
+                  disabled={isProcessing}
                   data-testid="button-pay-now"
                 >
-                  {isLoading ? (
+                  {isProcessing ? (
                     <span className="flex items-center gap-2">
-                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <Loader2 className="w-4 h-4 animate-spin" />
                       Processing...
                     </span>
                   ) : (

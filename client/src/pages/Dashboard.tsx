@@ -61,6 +61,10 @@ export function DashboardPage() {
 
   const myOrders = orders.filter((o: any) => o.clientId === authUser?.id);
   const currentOrder: any = myOrders[0];
+  
+  // Calculate revision days remaining
+  const daysRemaining = currentOrder ? Math.max(0, 30 - Math.floor((Date.now() - new Date(currentOrder.createdAt).getTime()) / (1000 * 60 * 60 * 24))) : 0;
+
   const { data: messages = [] } = useMessages(currentOrder?.id);
   const orderMessages = messages.sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   
@@ -335,7 +339,7 @@ export function DashboardPage() {
                 </div>
                 
                 <div className="space-y-6">
-                  <RevisionTimer daysRemaining={currentOrder.daysRemaining} orderId={currentOrder.id} />
+                  <RevisionTimer daysRemaining={daysRemaining} orderId={currentOrder.id} />
                   
                   <Card>
                     <CardHeader className="pb-3">
