@@ -76,7 +76,17 @@ function AdminChatLogs({ orders }: { orders: any[] }) {
 function AdminUserRoles() {
   const { data: users = [], isLoading } = useAllUsers();
   const updateRole = useUpdateUserRole();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, impersonate } = useAuth();
+
+  const handleImpersonate = async (userId: string) => {
+    try {
+      await impersonate(userId);
+      toast({ title: "Impersonating User", description: "You are now viewing the site as this user." });
+      window.location.href = "/dashboard";
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to impersonate user.", variant: "destructive" });
+    }
+  };
 
   const handleRoleChange = async (userId: string, newRole: string) => {
     try {
@@ -97,6 +107,7 @@ function AdminUserRoles() {
           <TableHead>Email</TableHead>
           <TableHead>Current Role</TableHead>
           <TableHead>Change Role</TableHead>
+          <TableHead>Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -105,17 +116,17 @@ function AdminUserRoles() {
             <TableCell className="font-medium">{user.fullName}</TableCell>
             <TableCell>{user.email}</TableCell>
             <TableCell>
-              <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
+              <Badge variant={user.role === 'admin' ? 'default' : user.role === 'writer' ? 'secondary' : 'outline'}>
                 {user.role}
               </Badge>
             </TableCell>
             <TableCell>
               <Select 
-                value={user.role} 
+                defaultValue={user.role} 
                 onValueChange={(val) => handleRoleChange(user.id, val)}
                 disabled={user.id === currentUser?.id}
               >
-                <SelectTrigger className="w-[130px] h-8">
+                <SelectTrigger className="w-[130px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -124,6 +135,17 @@ function AdminUserRoles() {
                   <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
+            </TableCell>
+            <TableCell>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => handleImpersonate(user.id)}
+                disabled={user.id === currentUser?.id}
+              >
+                <Users className="w-4 h-4 mr-2" />
+                Impersonate
+              </Button>
             </TableCell>
           </TableRow>
         ))}
@@ -157,6 +179,11 @@ export function AdminPage() {
   const totalEscrowHeld = orders.filter((o: any) => o.paymentStatus === "held").reduce((acc: number, curr: any) => acc + (curr.price || 0), 0);
   const totalReleased = orders.filter((o: any) => o.paymentStatus === "released").reduce((acc: number, curr: any) => acc + (curr.price || 0), 0);
   const totalRefunded = orders.filter((o: any) => o.paymentStatus === "refunded").reduce((acc: number, curr: any) => acc + (curr.price || 0), 0);
+  const totalRevenue = orders.reduce((acc: number, curr: any) => acc + (curr.price || 0), 0);
+  
+  // Analytics Metrics
+  const conversionRate = leads.length > 0 ? ((leads.filter((l: any) => l.status === "converted").length / leads.length) * 100).toFixed(1) : "0";
+  const avgOrderValue = orders.length > 0 ? (totalRevenue / orders.length).toFixed(0) : "0";
   
   const isLoading = authLoading || leadsLoading || ordersLoading || writersLoading;
 
@@ -296,7 +323,47 @@ export function AdminPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">${orders.reduce((acc: number, curr: any) => acc + (curr.price || 0), 0)}</div>
+            <div className="text-3xl font-bold">${totalRevenue}</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <Card className="bg-primary/5 border-primary/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-2">
+              <TrendingUp className="w-3 h-3" /> Conversion Rate
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{conversionRate}%</div>
+            <Progress value={parseFloat(conversionRate)} className="h-1.5 mt-2" />
+          </CardContent>
+        </Card>
+        <Card className="bg-primary/5 border-primary/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-2">
+              <DollarSign className="w-3 h-3" /> Avg. Order Value
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${avgOrderValue}</div>
+            <p className="text-[10px] text-muted-foreground mt-1">Based on {orders.length} orders</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-primary/5 border-primary/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-2">
+              <PieChart className="w-3 h-3" /> Lead Velocity
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">+{leads.filter((l: any) => {
+              const weekAgo = new Date();
+              weekAgo.setDate(weekAgo.getDate() - 7);
+              return new Date(l.createdAt) > weekAgo;
+            }).length}</div>
+            <p className="text-[10px] text-muted-foreground mt-1">New leads this week</p>
           </CardContent>
         </Card>
       </div>

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Search, Send, MoreVertical, Phone, Video, User } from "lucide-react";
+import { Search, Send, MoreVertical, Phone, Video, User, Globe, Monitor, MapPin } from "lucide-react";
 
 interface ChatSession {
   id: string;
@@ -95,8 +95,18 @@ export function AdminLiveChat() {
                   <h3 className="font-bold text-sm">{selectedLead.name}</h3>
                   <p className="text-xs text-muted-foreground flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-500" /> 
-                    Browsing: /pricing
+                    Browsing: {selectedLead.source === 'Live Chat' ? '/pricing' : 'Direct'}
                   </p>
+                </div>
+              </div>
+              <div className="hidden lg:flex items-center gap-6 px-4 border-l border-r h-10 mx-4 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1.5">
+                  <Globe className="w-3.5 h-3.5" />
+                  <span>Toronto, CA</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Monitor className="w-3.5 h-3.5" />
+                  <span>Chrome / macOS</span>
                 </div>
               </div>
               <div className="flex items-center gap-2">

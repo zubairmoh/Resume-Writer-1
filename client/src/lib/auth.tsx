@@ -6,6 +6,8 @@ interface AuthContextType {
   user: User | null | undefined;
   isLoading: boolean;
   login: (username: string, password: string) => Promise<User>;
+  impersonate: (userId: string) => Promise<User>;
+  stopImpersonating: () => Promise<User>;
   signup: (data: {
     username: string;
     password: string;
@@ -61,6 +63,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return loginMutation.mutateAsync({ username, password });
   };
 
+  const impersonate = async (userId: string): Promise<User> => {
+    const response = await fetch(`/api/auth/impersonate/${userId}`, { method: "POST" });
+    if (!response.ok) throw new Error("Failed to impersonate");
+    const data = await response.json();
+    queryClient.setQueryData(["auth", "me"], data);
+    return data;
+  };
+
+  const stopImpersonating = async (): Promise<User> => {
+    const response = await fetch("/api/auth/impersonate/stop", { method: "POST" });
+    if (!response.ok) throw new Error("Failed to stop impersonating");
+    const data = await response.json();
+    queryClient.setQueryData(["auth", "me"], data);
+    return data;
+  };
+
   const signup = async (data: {
     username: string;
     password: string;
@@ -76,7 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, impersonate, stopImpersonating, signup, logout }}>
       {children}
     </AuthContext.Provider>
   );

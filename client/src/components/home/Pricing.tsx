@@ -47,7 +47,16 @@ export function Pricing() {
     if (settings?.packages && Array.isArray(settings.packages)) {
       const updatedTiers = DEFAULT_TIERS.map(tier => {
         const settingPkg = settings.packages?.find((p: any) => p.id === tier.id);
-        return settingPkg ? { ...tier, price: settingPkg.price } : tier;
+        if (settingPkg) {
+          const pkg = settingPkg as any;
+          return { 
+            ...tier, 
+            price: pkg.price,
+            description: pkg.description || tier.description,
+            features: pkg.features && pkg.features.length > 0 ? pkg.features : tier.features
+          };
+        }
+        return tier;
       });
       setTiers(updatedTiers);
     }

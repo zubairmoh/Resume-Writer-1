@@ -89,98 +89,116 @@ export interface IStorage {
 
 const databaseUrl = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
 
-if (!databaseUrl) {
+if (!databaseUrl && process.env.NODE_ENV === 'production') {
   throw new Error("Database connection string not found");
 }
 
-const pool = new Pool({
+const pool = databaseUrl ? new Pool({
   connectionString: databaseUrl,
   ssl: databaseUrl.includes('neon.tech') ? { rejectUnauthorized: false } : undefined,
-});
+}) : null;
 
-const db = drizzle(pool);
+const db = pool ? drizzle(pool) : null;
 
 export class PostgresStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
+    if (!db) return undefined;
     const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
     return result[0];
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
+    if (!db) return undefined;
     const result = await db.select().from(users).where(eq(users.username, username)).limit(1);
     return result[0];
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
+    if (!db) return undefined;
     const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
     return result[0];
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
+    if (!db) throw new Error("Database not connected");
     const result = await db.insert(users).values(insertUser).returning();
     return result[0];
   }
 
   async getUsersByRole(role: string): Promise<User[]> {
+    if (!db) return [];
     return await db.select().from(users).where(eq(users.role, role));
   }
 
   async createLead(insertLead: InsertLead): Promise<Lead> {
+    if (!db) throw new Error("Database not connected");
     const result = await db.insert(leads).values(insertLead).returning();
     return result[0];
   }
 
   async getLeads(): Promise<Lead[]> {
+    if (!db) return [];
     return await db.select().from(leads).orderBy(desc(leads.createdAt));
   }
 
   async getLead(id: string): Promise<Lead | undefined> {
+    if (!db) return undefined;
     const result = await db.select().from(leads).where(eq(leads.id, id)).limit(1);
     return result[0];
   }
 
   async updateLead(id: string, data: Partial<InsertLead>): Promise<Lead | undefined> {
+    if (!db) return undefined;
     const result = await db.update(leads).set(data).where(eq(leads.id, id)).returning();
     return result[0];
   }
 
   async deleteLead(id: string): Promise<void> {
+    if (!db) return;
     await db.delete(leads).where(eq(leads.id, id));
   }
 
   async createOrder(insertOrder: InsertOrder): Promise<Order> {
+    if (!db) throw new Error("Database not connected");
     const result = await db.insert(orders).values(insertOrder).returning();
     return result[0];
   }
 
   async getOrders(): Promise<Order[]> {
+    if (!db) return [];
     return await db.select().from(orders).orderBy(desc(orders.createdAt));
   }
 
   async getOrder(id: string): Promise<Order | undefined> {
+    if (!db) return undefined;
     const result = await db.select().from(orders).where(eq(orders.id, id)).limit(1);
     return result[0];
   }
 
   async getOrdersByClient(clientId: string): Promise<Order[]> {
+    if (!db) return [];
     return await db.select().from(orders).where(eq(orders.clientId, clientId)).orderBy(desc(orders.createdAt));
   }
 
   async getOrdersByWriter(writerId: string): Promise<Order[]> {
+    if (!db) return [];
     return await db.select().from(orders).where(eq(orders.writerId, writerId)).orderBy(desc(orders.createdAt));
   }
 
   async updateOrder(id: string, data: Partial<InsertOrder>): Promise<Order | undefined> {
+    if (!db) return undefined;
     const result = await db.update(orders).set({ ...data, updatedAt: new Date() }).where(eq(orders.id, id)).returning();
     return result[0];
   }
 
   async createMessage(insertMessage: InsertMessage): Promise<Message> {
+    if (!db) throw new Error("Database not connected");
     const result = await db.insert(messages).values(insertMessage).returning();
     return result[0];
   }
 
   async getMessages(orderId?: string): Promise<Message[]> {
+    if (!db) return [];
     if (orderId) {
       return await db.select().from(messages).where(eq(messages.orderId, orderId)).orderBy(messages.createdAt);
     }
@@ -188,6 +206,7 @@ export class PostgresStorage implements IStorage {
   }
 
   async getMessagesByUsers(userId1: string, userId2: string): Promise<Message[]> {
+    if (!db) return [];
     return await db.select().from(messages)
       .where(
         and(
@@ -199,33 +218,40 @@ export class PostgresStorage implements IStorage {
   }
 
   async markMessageAsRead(id: string): Promise<void> {
+    if (!db) return;
     await db.update(messages).set({ isRead: true }).where(eq(messages.id, id));
   }
 
   async createDocument(insertDocument: InsertDocument): Promise<Document> {
+    if (!db) throw new Error("Database not connected");
     const result = await db.insert(documents).values(insertDocument).returning();
     return result[0];
   }
 
   async getDocuments(orderId: string): Promise<Document[]> {
+    if (!db) return [];
     return await db.select().from(documents).where(eq(documents.orderId, orderId)).orderBy(desc(documents.createdAt));
   }
 
   async getDocument(id: string): Promise<Document | undefined> {
+    if (!db) return undefined;
     const result = await db.select().from(documents).where(eq(documents.id, id)).limit(1);
     return result[0];
   }
   
   async deleteDocument(id: string): Promise<void> {
+    if (!db) return;
     await db.delete(documents).where(eq(documents.id, id));
   }
 
   async getAdminSettings(): Promise<AdminSettings | undefined> {
+    if (!db) return undefined;
     const result = await db.select().from(adminSettings).limit(1);
     return result[0];
   }
 
   async updateAdminSettings(settings: Partial<InsertAdminSettings>): Promise<AdminSettings> {
+    if (!db) throw new Error("Database not connected");
     const existing = await this.getAdminSettings();
     
     if (existing) {
@@ -241,11 +267,13 @@ export class PostgresStorage implements IStorage {
   }
 
   async getWidgetLayout(userId: string): Promise<WidgetLayout | undefined> {
+    if (!db) return undefined;
     const result = await db.select().from(widgetLayouts).where(eq(widgetLayouts.userId, userId)).limit(1);
     return result[0];
   }
 
   async saveWidgetLayout(userId: string, widgets: any[]): Promise<WidgetLayout> {
+    if (!db) throw new Error("Database not connected");
     const existing = await this.getWidgetLayout(userId);
     
     if (existing) {
@@ -261,62 +289,75 @@ export class PostgresStorage implements IStorage {
   }
 
   async getAllUsers(): Promise<User[]> {
+    if (!db) return [];
     return await db.select().from(users).orderBy(desc(users.createdAt));
   }
 
   async updateUser(id: string, data: Partial<InsertUser>): Promise<User | undefined> {
+    if (!db) return undefined;
     const result = await db.update(users).set(data).where(eq(users.id, id)).returning();
     return result[0];
   }
 
   async getAddons(): Promise<Addon[]> {
+    if (!db) return [];
     return await db.select().from(addons).orderBy(addons.name);
   }
 
   async getAddon(id: string): Promise<Addon | undefined> {
+    if (!db) return undefined;
     const result = await db.select().from(addons).where(eq(addons.id, id)).limit(1);
     return result[0];
   }
 
   async createAddon(insertAddon: InsertAddon): Promise<Addon> {
+    if (!db) throw new Error("Database not connected");
     const result = await db.insert(addons).values(insertAddon).returning();
     return result[0];
   }
 
   async updateAddon(id: string, data: Partial<InsertAddon>): Promise<Addon | undefined> {
+    if (!db) return undefined;
     const result = await db.update(addons).set(data).where(eq(addons.id, id)).returning();
     return result[0];
   }
 
   async getOrderAddons(orderId: string): Promise<OrderAddon[]> {
+    if (!db) return [];
     return await db.select().from(orderAddons).where(eq(orderAddons.orderId, orderId));
   }
 
   async createOrderAddon(insertOrderAddon: InsertOrderAddon): Promise<OrderAddon> {
+    if (!db) throw new Error("Database not connected");
     const result = await db.insert(orderAddons).values(insertOrderAddon).returning();
     return result[0];
   }
 
   async updateOrderAddon(id: string, data: Partial<InsertOrderAddon>): Promise<OrderAddon | undefined> {
+    if (!db) return undefined;
     const result = await db.update(orderAddons).set(data).where(eq(orderAddons.id, id)).returning();
     return result[0];
   }
 
   async getApplications(userId: string): Promise<Application[]> {
+    if (!db) return [];
     return await db.select().from(applications).where(eq(applications.userId, userId)).orderBy(desc(applications.appliedAt));
   }
 
   async createApplication(insertApplication: InsertApplication): Promise<Application> {
+    if (!db) throw new Error("Database not connected");
     const result = await db.insert(applications).values(insertApplication).returning();
     return result[0];
   }
 
   async updateApplication(id: string, data: Partial<InsertApplication>): Promise<Application | undefined> {
+    if (!db) return undefined;
     const result = await db.update(applications).set({ ...data, updatedAt: new Date() }).where(eq(applications.id, id)).returning();
     return result[0];
   }
 
   async deleteApplication(id: string): Promise<void> {
+    if (!db) return;
     await db.delete(applications).where(eq(applications.id, id));
   }
 }

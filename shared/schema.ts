@@ -127,6 +127,7 @@ export const packageSchema = z.object({
   name: z.string(),
   price: z.number(),
   description: z.string(),
+  features: z.array(z.string()).optional(),
 });
 
 export const adminSettings = pgTable("admin_settings", {
@@ -147,10 +148,11 @@ export const adminSettings = pgTable("admin_settings", {
   smtpPass: text("smtp_pass"),
   browseNotificationsEnabled: boolean("browse_notifications_enabled").default(false),
   packages: jsonb("packages").default([
-    { id: "basic", name: "Basic", price: 99, description: "Professional Resume" },
-    { id: "pro", name: "Professional", price: 199, description: "Resume + Cover Letter" },
-    { id: "exec", name: "Executive", price: 299, description: "Full Career Suite" }
+    { id: "basic", name: "Basic", price: 99, description: "Professional Resume", features: ["ATS Optimization", "Professional Formatting", "1 Revision"] },
+    { id: "pro", name: "Professional", price: 199, description: "Resume + Cover Letter", features: ["ATS Optimization", "Cover Letter", "3 Revisions", "LinkedIn Tips"] },
+    { id: "exec", name: "Executive", price: 299, description: "Full Career Suite", features: ["ATS Optimization", "Cover Letter", "LinkedIn Profile", "Unlimited Revisions", "Priority Support"] }
   ]),
+  coupons: jsonb("coupons").default([]),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 

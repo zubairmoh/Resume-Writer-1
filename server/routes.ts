@@ -126,17 +126,22 @@ app.use(
   });
 
   app.post("/api/auth/login", (req, res, next) => {
+    console.log("Login request received for:", req.body.username);
     passport.authenticate("local", (err: any, user: any, info: any) => {
       if (err) {
+        console.error("Passport auth error:", err);
         return res.status(500).json({ message: "Error during login" });
       }
       if (!user) {
-        return res.status(401).json({ message: info.message || "Invalid credentials" });
+        console.log("Passport auth failed:", info?.message || "Invalid credentials");
+        return res.status(401).json({ message: info?.message || "Invalid credentials" });
       }
       req.login(user, (err) => {
         if (err) {
+          console.error("req.login error:", err);
           return res.status(500).json({ message: "Error logging in" });
         }
+        console.log("Login successful for:", user.username);
         const { password, ...userWithoutPassword } = user;
         res.json(userWithoutPassword);
       });
@@ -148,13 +153,57 @@ app.use(
       if (err) {
         return res.status(500).json({ message: "Error logging out" });
       }
-      res.json({ message: "Logged out successfully" });
+      res.json({ message: "Logged out" });
+    });
+  });
+
+  app.post("/api/auth/impersonate/:userId", async (req, res) => {
+    const user = req.user as any;
+    if (!req.isAuthenticated() || user.role !== "admin") {
+      return res.status(403).json({ message: "Only admins can impersonate" });
+    }
+
+    const targetUser = await storage.getUser(req.params.userId);
+    if (!targetUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Store original admin ID in session
+    (req.session as any).originalAdminId = user.id;
+
+    req.login(targetUser, (err) => {
+      if (err) return res.status(500).json({ message: "Error impersonating" });
+      const { password, ...userWithoutPassword } = targetUser;
+      res.json(userWithoutPassword);
+    });
+  });
+
+  app.post("/api/auth/impersonate/stop", async (req, res) => {
+    const originalAdminId = (req.session as any).originalAdminId;
+    if (!originalAdminId) {
+      return res.status(400).json({ message: "Not currently impersonating" });
+    }
+
+    const adminUser = await storage.getUser(originalAdminId);
+    if (!adminUser) {
+      return res.status(404).json({ message: "Original admin not found" });
+    }
+
+    delete (req.session as any).originalAdminId;
+
+    req.login(adminUser, (err) => {
+      if (err) return res.status(500).json({ message: "Error returning to admin" });
+      const { password, ...userWithoutPassword } = adminUser;
+      res.json(userWithoutPassword);
     });
   });
 
   app.get("/api/auth/me", isAuthenticated, (req, res) => {
     const { password, ...userWithoutPassword } = req.user as any;
-    res.json(userWithoutPassword);
+    res.json({
+      ...userWithoutPassword,
+      isImpersonated: !!(req.session as any).originalAdminId
+    });
   });
 
   app.get("/api/users/writers", isAuthenticated, async (req, res) => {
