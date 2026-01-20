@@ -7,9 +7,12 @@ async function seed() {
   const hashedPassword = await bcrypt.hash("password123", 10);
 
   // 1. Create Admin
-  const admin = await storage.getUserByUsername("admin");
-  if (!admin) {
-    await storage.createUser({
+  let admin = await storage.getUserByUsername("admin");
+  if (admin) {
+    await storage.updateUser(admin.id, { password: hashedPassword });
+    console.log("Admin password updated: admin / password123");
+  } else {
+    admin = await storage.createUser({
       username: "admin",
       password: hashedPassword,
       email: "admin@proresumes.com",
@@ -20,34 +23,38 @@ async function seed() {
   }
 
   // 2. Create Writer
-  const writer = await storage.getUserByUsername("writer1");
-  let writerId = writer?.id;
-  if (!writer) {
-    const newWriter = await storage.createUser({
+  let writer = await storage.getUserByUsername("writer1");
+  if (writer) {
+    await storage.updateUser(writer.id, { password: hashedPassword });
+    console.log("Writer password updated: writer1 / password123");
+  } else {
+    writer = await storage.createUser({
       username: "writer1",
       password: hashedPassword,
       email: "writer1@proresumes.com",
       fullName: "John Writer",
       role: "writer",
     });
-    writerId = newWriter.id;
     console.log("Writer created: writer1 / password123");
   }
+  const writerId = writer.id;
 
   // 3. Create Client
-  const client = await storage.getUserByUsername("client1");
-  let clientId = client?.id;
-  if (!client) {
-    const newClient = await storage.createUser({
+  let client = await storage.getUserByUsername("client1");
+  if (client) {
+    await storage.updateUser(client.id, { password: hashedPassword });
+    console.log("Client password updated: client1 / password123");
+  } else {
+    client = await storage.createUser({
       username: "client1",
       password: hashedPassword,
       email: "client1@proresumes.com",
       fullName: "Jane Client",
       role: "client",
     });
-    clientId = newClient.id;
     console.log("Client created: client1 / password123");
   }
+  const clientId = client.id;
 
   // 4. Create an Order for the client
   if (clientId && writerId) {

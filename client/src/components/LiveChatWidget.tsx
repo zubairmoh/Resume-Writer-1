@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { MessageSquare, X, Send, User } from "lucide-react";
+import { useAuth } from "@/lib/auth";
+import { useCreateMessage, useMessages, useCreateLead } from "@/lib/hooks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
@@ -8,39 +10,71 @@ import { AnimatePresence, motion } from "framer-motion";
 export function LiveChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [hasPopped, setHasPopped] = useState(false);
-  const [messages, setMessages] = useState<{ role: 'agent' | 'user', text: string }[]>([
-    { role: 'agent', text: "Hi there! 👋 I noticed you're looking to improve your resume. Do you have any questions about our packages?" }
-  ]);
+  const { user } = useAuth();
+  const createLead = useCreateLead();
+  const [leadId, setLeadId] = useState<string | null>(localStorage.getItem("chat_lead_id"));
+  
+  const { data: leadMessages = [] } = useMessages(leadId || undefined);
+  const createMessage = useCreateMessage();
+
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
 
   useEffect(() => {
-    // Show the popup after 30 seconds of browsing (simulating "couple of minutes" for demo speed)
-    // In production, this might be 120000 (2 mins)
     const timer = setTimeout(() => {
       if (!isOpen && !hasPopped) {
         setIsOpen(true);
         setHasPopped(true);
       }
-    }, 15000); // 15 seconds for demo purposes so the user sees it
-
+    }, 15000);
     return () => clearTimeout(timer);
   }, [isOpen, hasPopped]);
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputValue.trim()) return;
 
-    setMessages(prev => [...prev, { role: 'user', text: inputValue }]);
-    setInputValue("");
-    setIsTyping(true);
+    let currentLeadId = leadId;
 
-    // Simulate agent response
-    setTimeout(() => {
-      setMessages(prev => [...prev, { role: 'agent', text: "Thanks for reaching out! A senior resume writer will be with you shortly. In the meantime, have you checked our 'Professional' package?" }]);
-      setIsTyping(false);
-    }, 2000);
+    // If no lead exists, create one first
+    if (!currentLeadId) {
+      try {
+        const lead = await createLead.mutateAsync({
+          name: "Website Visitor",
+          email: "visitor@anonymous.com",
+          source: "Live Chat",
+          status: "new"
+        });
+        currentLeadId = lead.id;
+        setLeadId(lead.id);
+        localStorage.setItem("chat_lead_id", lead.id);
+      } catch (error) {
+        console.error("Failed to create lead:", error);
+        return;
+      }
+    }
+
+    try {
+      await createMessage.mutateAsync({
+        senderId: user?.id || currentLeadId || "anonymous", 
+        content: inputValue,
+        type: "lead_chat",
+        orderId: currentLeadId || undefined
+      });
+      setInputValue("");
+    } catch (error) {
+      console.error("Failed to send message:", error);
+    }
   };
+
+  // Combine initial message with real messages
+  const allMessages = [
+    { role: 'agent', text: "Hi there! 👋 I noticed you're looking to improve your resume. Do you have any questions about our packages?" },
+    ...leadMessages.map((m: any) => ({
+      role: m.senderId === leadId ? 'user' : 'agent',
+      text: m.content
+    }))
+  ];
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-4">
@@ -77,7 +111,7 @@ export function LiveChatWidget() {
               </CardHeader>
               <CardContent className="h-[300px] p-4 overflow-y-auto bg-slate-50 dark:bg-slate-900/50 flex flex-col gap-3">
                 <div className="text-xs text-center text-muted-foreground my-2">Today</div>
-                {messages.map((msg, i) => (
+                {allMessages.map((msg, i) => (
                   <div 
                     key={i} 
                     className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}

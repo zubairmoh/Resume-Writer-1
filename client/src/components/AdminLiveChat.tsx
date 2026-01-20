@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLeads, useMessages, useCreateMessage } from "@/lib/hooks";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,74 +19,30 @@ interface ChatSession {
 }
 
 export function AdminLiveChat() {
-  const [sessions, setSessions] = useState<ChatSession[]>([
-    {
-      id: "1",
-      visitorName: "Visitor #4829",
-      visitorLocation: "Toronto, ON",
-      status: "active",
-      lastMessage: "Do you offer rush services?",
-      unreadCount: 1,
-      messages: [
-        { id: "1", text: "Hi, I'm looking for a resume writer.", sender: "visitor", timestamp: "10:30 AM" },
-        { id: "2", text: "Hello! I can certainly help with that. What industry are you in?", sender: "agent", timestamp: "10:31 AM" },
-        { id: "3", text: "I'm in Finance.", sender: "visitor", timestamp: "10:32 AM" },
-        { id: "4", text: "Do you offer rush services?", sender: "visitor", timestamp: "10:33 AM" },
-      ]
-    },
-    {
-      id: "2",
-      visitorName: "Visitor #4830",
-      visitorLocation: "Vancouver, BC",
-      status: "idle",
-      lastMessage: "Thanks, I'll check it out.",
-      unreadCount: 0,
-      messages: [
-        { id: "1", text: "How much is the executive package?", sender: "visitor", timestamp: "09:15 AM" },
-        { id: "2", text: "It's currently $349 and includes LinkedIn optimization.", sender: "agent", timestamp: "09:16 AM" },
-        { id: "3", text: "Thanks, I'll check it out.", sender: "visitor", timestamp: "09:17 AM" },
-      ]
-    },
-     {
-      id: "3",
-      visitorName: "Visitor #4831",
-      visitorLocation: "Montreal, QC",
-      status: "active",
-      lastMessage: "Is this service bilingual?",
-      unreadCount: 2,
-      messages: [
-        { id: "1", text: "Bonjour!", sender: "visitor", timestamp: "11:00 AM" },
-        { id: "2", text: "Is this service bilingual?", sender: "visitor", timestamp: "11:01 AM" },
-      ]
-    }
-  ]);
-
-  const [selectedSessionId, setSelectedSessionId] = useState<string | null>("1");
+  const { data: leads = [] } = useLeads();
+  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
+  const { data: messages = [] } = useMessages(selectedLeadId || undefined);
+  const createMessage = useCreateMessage();
   const [replyText, setReplyText] = useState("");
 
-  const selectedSession = sessions.find(s => s.id === selectedSessionId);
+  const chatLeads = leads.filter(l => l.source === "Live Chat");
+  const selectedLead = chatLeads.find(l => l.id === selectedLeadId);
 
-  const handleSend = (e: React.FormEvent) => {
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!replyText.trim() || !selectedSessionId) return;
+    if (!replyText.trim() || !selectedLeadId) return;
 
-    setSessions(prev => prev.map(session => {
-      if (session.id === selectedSessionId) {
-        return {
-          ...session,
-          messages: [...session.messages, { 
-            id: Date.now().toString(), 
-            text: replyText, 
-            sender: "agent", 
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
-          }],
-          lastMessage: replyText,
-          status: "active"
-        };
-      }
-      return session;
-    }));
-    setReplyText("");
+    try {
+      await createMessage.mutateAsync({
+        senderId: "admin", // In a real app, use the logged-in admin's ID
+        content: replyText,
+        type: "lead_chat",
+        orderId: selectedLeadId
+      });
+      setReplyText("");
+    } catch (error) {
+      console.error("Failed to send message:", error);
+    }
   };
 
   return (
@@ -100,29 +57,26 @@ export function AdminLiveChat() {
         </div>
         <ScrollArea className="flex-1">
           <div className="flex flex-col">
-            {sessions.map(session => (
+            {chatLeads.map(lead => (
               <button
-                key={session.id}
-                onClick={() => setSelectedSessionId(session.id)}
-                className={`flex items-start gap-3 p-4 text-left hover:bg-white dark:hover:bg-slate-800 transition-colors border-b last:border-0 ${selectedSessionId === session.id ? "bg-white dark:bg-slate-800 border-l-4 border-l-primary" : "border-l-4 border-l-transparent"}`}
+                key={lead.id}
+                onClick={() => setSelectedLeadId(lead.id)}
+                className={`flex items-start gap-3 p-4 text-left hover:bg-white dark:hover:bg-slate-800 transition-colors border-b last:border-0 ${selectedLeadId === lead.id ? "bg-white dark:bg-slate-800 border-l-4 border-l-primary" : "border-l-4 border-l-transparent"}`}
               >
                 <div className="relative">
                   <Avatar>
                     <AvatarFallback><User className="w-4 h-4" /></AvatarFallback>
                   </Avatar>
-                  <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white dark:border-slate-900 ${session.status === 'active' ? 'bg-green-500' : 'bg-yellow-500'}`} />
+                  <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white dark:border-slate-900 ${lead.status === 'active' ? 'bg-green-500' : 'bg-yellow-500'}`} />
                 </div>
                 <div className="flex-1 overflow-hidden">
                   <div className="flex justify-between items-start mb-1">
-                    <span className="font-semibold text-sm truncate">{session.visitorName}</span>
-                    <span className="text-[10px] text-muted-foreground">{session.messages[session.messages.length - 1]?.timestamp}</span>
+                    <span className="font-semibold text-sm truncate">{lead.name}</span>
+                    <span className="text-[10px] text-muted-foreground">{new Date(lead.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                   </div>
-                  <p className="text-xs text-muted-foreground truncate mb-1">{session.lastMessage}</p>
+                  <p className="text-xs text-muted-foreground truncate mb-1">{lead.email}</p>
                   <div className="flex justify-between items-center">
-                     <span className="text-[10px] text-muted-foreground">{session.visitorLocation}</span>
-                     {session.unreadCount > 0 && (
-                       <Badge variant="destructive" className="h-5 w-5 rounded-full p-0 flex items-center justify-center text-[10px]">{session.unreadCount}</Badge>
-                     )}
+                     <span className="text-[10px] text-muted-foreground">Live Chat</span>
                   </div>
                 </div>
               </button>
@@ -133,12 +87,12 @@ export function AdminLiveChat() {
 
       {/* Chat Area */}
       <div className="flex-1 flex flex-col bg-white dark:bg-slate-950">
-        {selectedSession ? (
+        {selectedLead ? (
           <>
             <div className="h-16 border-b flex items-center justify-between px-6">
               <div className="flex items-center gap-3">
                 <div>
-                  <h3 className="font-bold text-sm">{selectedSession.visitorName}</h3>
+                  <h3 className="font-bold text-sm">{selectedLead.name}</h3>
                   <p className="text-xs text-muted-foreground flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-500" /> 
                     Browsing: /pricing
@@ -154,16 +108,18 @@ export function AdminLiveChat() {
 
             <ScrollArea className="flex-1 p-6">
               <div className="space-y-4">
-                {selectedSession.messages.map((msg) => (
-                  <div key={msg.id} className={`flex ${msg.sender === "agent" ? "justify-end" : "justify-start"}`}>
+                {messages.map((msg: any) => (
+                  <div key={msg.id} className={`flex ${msg.senderId === "admin" ? "justify-end" : "justify-start"}`}>
                     <div className={`max-w-[70%] rounded-2xl px-4 py-2 text-sm shadow-sm ${
-                      msg.sender === "agent" 
+                      msg.senderId === "admin" 
                         ? "bg-primary text-primary-foreground rounded-br-sm" 
                         : "bg-secondary text-secondary-foreground rounded-bl-sm"
                     }`}>
-                      {msg.text}
+                      {msg.content}
                     </div>
-                    <span className="text-[10px] text-muted-foreground self-end ml-2">{msg.timestamp}</span>
+                    <span className="text-[10px] text-muted-foreground self-end ml-2">
+                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
                   </div>
                 ))}
               </div>
