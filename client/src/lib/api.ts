@@ -73,6 +73,17 @@ export interface Document {
   createdAt: string;
 }
 
+export interface Application {
+  id: string;
+  userId: string;
+  company: string;
+  position: string;
+  status: "applied" | "interviewing" | "offer" | "rejected";
+  notes?: string;
+  appliedAt: string;
+  updatedAt: string;
+}
+
 export interface AdminSettings {
   id?: string;
   stripePublishableKey?: string;
@@ -189,6 +200,7 @@ export const api = {
       fetchAPI("/documents", { method: "POST", body: JSON.stringify(data) }),
     
     getAll: (orderId: string): Promise<Document[]> => fetchAPI(`/documents?orderId=${orderId}`),
+    delete: (id: string) => fetchAPI(`/documents/${id}`, { method: "DELETE" }),
   },
 
   admin: {
@@ -221,6 +233,13 @@ export const api = {
     
     saveLayout: (widgets: WidgetConfig[]) =>
       fetchAPI("/widgets", { method: "PUT", body: JSON.stringify({ widgets }) }),
+  },
+
+  applications: {
+    getAll: (): Promise<Application[]> => fetchAPI("/applications"),
+    create: (data: Partial<Application>) => fetchAPI("/applications", { method: "POST", body: JSON.stringify(data) }),
+    update: (id: string, data: Partial<Application>) => fetchAPI(`/applications/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+    delete: (id: string) => fetchAPI(`/applications/${id}`, { method: "DELETE" }),
   },
 };
 

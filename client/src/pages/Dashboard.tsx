@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/lib/auth";
-import { useOrders, useMessages, useCreateMessage, useWriters } from "@/lib/hooks";
+import { useOrders, useMessages, useCreateMessage, useWriters, useDocuments, useCreateDocument, useDeleteDocument, useUpdateOrder, useApplications, useCreateApplication, useUpdateApplication, useDeleteApplication } from "@/lib/hooks";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -47,6 +47,7 @@ export function DashboardPage() {
   const { data: orders = [], isLoading: ordersLoading } = useOrders();
   const { data: writers = [] } = useWriters();
   const createMessage = useCreateMessage();
+  const updateOrder = useUpdateOrder();
   
   const navigate = useNavigate();
   const [messageInput, setMessageInput] = useState("");
@@ -56,11 +57,21 @@ export function DashboardPage() {
   const [revisionComments, setRevisionComments] = useState("");
   const [profileData, setProfileData] = useState({ name: "", email: "" });
 
-  const [targetJobs, setTargetJobs] = useState<{id: number; title: string; company: string; url: string}[]>([]);
-  const [newJobUrl, setNewJobUrl] = useState("");
-
   const myOrders = orders.filter((o: any) => o.clientId === authUser?.id);
   const currentOrder: any = myOrders[0];
+
+  const { data: docs = [] } = useDocuments(currentOrder?.id);
+  const createDoc = useCreateDocument();
+  const deleteDoc = useDeleteDocument();
+
+  const { data: apps = [] } = useApplications();
+  const createApplication = useCreateApplication();
+  const updateApplication = useUpdateApplication();
+  const deleteApplication = useDeleteApplication();
+
+  const [newJobUrl, setNewJobUrl] = useState("");
+  const [isAppDialogOpen, setIsAppDialogOpen] = useState(false);
+  const [newApp, setNewApp] = useState({ company: "", position: "", status: "applied" as any });
   
   // Calculate revision days remaining
   const daysRemaining = currentOrder ? Math.max(0, 30 - Math.floor((Date.now() - new Date(currentOrder.createdAt).getTime()) / (1000 * 60 * 60 * 24))) : 0;
@@ -142,16 +153,51 @@ export function DashboardPage() {
     }
   };
 
-  const handleAddTargetJob = () => {
-    if (!newJobUrl) return;
-    setTargetJobs([...targetJobs, { 
-      id: Date.now(), 
-      title: "New Role (Pending Review)", 
-      company: "Unknown", 
-      url: newJobUrl 
-    }]);
-    setNewJobUrl("");
-    toast({ title: "Job Added", description: "Your writer will review this target role." });
+  const handleAddTargetJob = async () => {
+    if (!newJobUrl || !currentOrder) return;
+    try {
+      await updateOrder.mutateAsync({
+        id: currentOrder.id,
+        data: { targetJobUrl: newJobUrl }
+      });
+      setNewJobUrl("");
+      toast({ title: "Job Added", description: "Your writer will review this target role." });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Error", description: error.message });
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !currentOrder || !authUser) return;
+
+    try {
+      // Simulation of file upload to a URL
+      const mockUrl = `https://proresumes.s3.amazonaws.com/uploads/${Date.now()}_${file.name}`;
+      await createDoc.mutateAsync({
+        orderId: currentOrder.id,
+        uploadedBy: authUser.id,
+        fileName: file.name,
+        fileUrl: mockUrl,
+        fileType: file.type,
+        fileSize: file.size,
+      });
+      toast({ title: "File Uploaded", description: `${file.name} has been shared with your writer.` });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Upload Failed", description: error.message });
+    }
+  };
+
+  const handleAddApplication = async () => {
+    if (!newApp.company || !newApp.position) return;
+    try {
+      await createApplication.mutateAsync(newApp);
+      setIsAppDialogOpen(false);
+      setNewApp({ company: "", position: "", status: "applied" });
+      toast({ title: "Application Added", description: "Your job tracker has been updated." });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Error", description: error.message });
+    }
   };
 
   return (
@@ -381,7 +427,12 @@ export function DashboardPage() {
                    <CardDescription>Upload your current resume, cover letter, and any other helpful documents for your writer.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                   <div className="border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center text-center hover:bg-secondary/20 transition-colors cursor-pointer" onClick={() => toast({ title: "Upload Started", description: "File upload simulation started." })}>
+                   <div className="relative border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center text-center hover:bg-secondary/20 transition-colors cursor-pointer">
+                      <input 
+                        type="file" 
+                        className="absolute inset-0 opacity-0 cursor-pointer" 
+                        onChange={handleFileUpload}
+                      />
                       <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
                         <Upload className="w-6 h-6 text-primary" />
                       </div>
@@ -393,26 +444,28 @@ export function DashboardPage() {
                    <div className="space-y-4">
                       <h4 className="font-medium text-sm">Uploaded Files</h4>
                       <div className="space-y-2">
-                        <div className="flex items-center justify-between p-3 border rounded-lg">
-                           <div className="flex items-center gap-3">
-                              <FileText className="w-8 h-8 text-blue-500" />
-                              <div>
-                                 <p className="text-sm font-medium">old_resume_2023.pdf</p>
-                                 <p className="text-xs text-muted-foreground">Uploaded Dec 25, 2024</p>
-                              </div>
-                           </div>
-                           <Button size="icon" variant="ghost" className="text-red-500"><Trash2 className="w-4 h-4" /></Button>
-                        </div>
-                         <div className="flex items-center justify-between p-3 border rounded-lg">
-                           <div className="flex items-center gap-3">
-                              <FileText className="w-8 h-8 text-blue-500" />
-                              <div>
-                                 <p className="text-sm font-medium">job_description.txt</p>
-                                 <p className="text-xs text-muted-foreground">Uploaded Dec 25, 2024</p>
-                              </div>
-                           </div>
-                           <Button size="icon" variant="ghost" className="text-red-500"><Trash2 className="w-4 h-4" /></Button>
-                        </div>
+                        {docs.map((doc: any) => (
+                          <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg">
+                             <div className="flex items-center gap-3">
+                                <FileText className="w-8 h-8 text-blue-500" />
+                                <div>
+                                   <p className="text-sm font-medium">{doc.fileName}</p>
+                                   <p className="text-xs text-muted-foreground">Uploaded {new Date(doc.createdAt).toLocaleDateString()}</p>
+                                </div>
+                             </div>
+                             <Button 
+                               size="icon" 
+                               variant="ghost" 
+                               className="text-red-500"
+                               onClick={() => deleteDoc.mutate(doc.id)}
+                             >
+                               <Trash2 className="w-4 h-4" />
+                             </Button>
+                          </div>
+                        ))}
+                        {docs.length === 0 && (
+                          <p className="text-sm text-muted-foreground italic text-center py-4">No documents uploaded yet.</p>
+                        )}
                       </div>
                    </div>
 
@@ -450,29 +503,35 @@ export function DashboardPage() {
                    </div>
 
                    <div className="space-y-3">
-                     {targetJobs.map((job) => (
-                       <div key={job.id} className="flex items-center justify-between p-4 border rounded-lg bg-card hover:bg-secondary/20 transition-colors">
+                     {currentOrder?.targetJobUrl && (
+                       <div className="flex items-center justify-between p-4 border rounded-lg bg-card hover:bg-secondary/20 transition-colors">
                          <div className="flex items-center gap-4">
                            <div className="w-10 h-10 rounded bg-primary/10 flex items-center justify-center text-primary">
                              <Briefcase className="w-5 h-5" />
                            </div>
                            <div>
-                             <p className="font-medium">{job.title}</p>
-                             <p className="text-sm text-muted-foreground">{job.company}</p>
+                             <p className="font-medium">Target Job Posting</p>
+                             <p className="text-sm text-muted-foreground truncate max-w-xs">{currentOrder.targetJobUrl}</p>
                            </div>
                          </div>
                          <div className="flex items-center gap-2">
-                           {job.url && (
-                             <a href={job.url} target="_blank" rel="noreferrer">
-                               <Button variant="ghost" size="icon"><ExternalLink className="w-4 h-4" /></Button>
-                             </a>
-                           )}
-                           <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600">
+                           <a href={currentOrder.targetJobUrl} target="_blank" rel="noreferrer">
+                             <Button variant="ghost" size="icon"><ExternalLink className="w-4 h-4" /></Button>
+                           </a>
+                           <Button 
+                             variant="ghost" 
+                             size="icon" 
+                             className="text-red-500 hover:text-red-600"
+                             onClick={() => updateOrder.mutate({ id: currentOrder.id, data: { targetJobUrl: "" } })}
+                           >
                              <Trash2 className="w-4 h-4" />
                            </Button>
                          </div>
                        </div>
-                     ))}
+                     )}
+                     {!currentOrder?.targetJobUrl && (
+                       <p className="text-sm text-muted-foreground italic text-center py-4">No target job URL added yet.</p>
+                     )}
                    </div>
                    
                    <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-lg border border-blue-100 dark:border-blue-900/30">
@@ -494,54 +553,74 @@ export function DashboardPage() {
                      <CardTitle>Job Application Tracker</CardTitle>
                      <CardDescription>Keep track of your active applications.</CardDescription>
                    </div>
-                   <Button size="sm"><Plus className="w-4 h-4 mr-2" /> Add Application</Button>
+                   <Dialog open={isAppDialogOpen} onOpenChange={setIsAppDialogOpen}>
+                     <Button size="sm" onClick={() => setIsAppDialogOpen(true)}><Plus className="w-4 h-4 mr-2" /> Add Application</Button>
+                     <DialogContent>
+                       <DialogHeader>
+                         <DialogTitle>Add New Application</DialogTitle>
+                       </DialogHeader>
+                       <div className="space-y-4 py-4">
+                         <div className="space-y-2">
+                           <Label>Company</Label>
+                           <Input value={newApp.company} onChange={e => setNewApp({...newApp, company: e.target.value})} placeholder="e.g. Google" />
+                         </div>
+                         <div className="space-y-2">
+                           <Label>Position</Label>
+                           <Input value={newApp.position} onChange={e => setNewApp({...newApp, position: e.target.value})} placeholder="e.g. Senior Developer" />
+                         </div>
+                         <div className="space-y-2">
+                           <Label>Status</Label>
+                           <select 
+                             className="w-full p-2 border rounded bg-background"
+                             value={newApp.status}
+                             onChange={e => setNewApp({...newApp, status: e.target.value as any})}
+                           >
+                             <option value="applied">Applied</option>
+                             <option value="interviewing">Interviewing</option>
+                             <option value="offer">Offer</option>
+                             <option value="rejected">Rejected</option>
+                           </select>
+                         </div>
+                       </div>
+                       <DialogFooter>
+                         <Button onClick={handleAddApplication}>Save Application</Button>
+                       </DialogFooter>
+                     </DialogContent>
+                   </Dialog>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* Applied Column */}
-                    <div className="bg-secondary/30 p-4 rounded-lg min-h-[400px]">
-                      <h4 className="font-medium mb-4 flex items-center justify-between">
-                        <span>Applied</span>
-                        <Badge variant="secondary">1</Badge>
-                      </h4>
-                      <div className="space-y-3">
-                         <Card className="p-3 shadow-sm cursor-grab active:cursor-grabbing">
-                           <div className="flex justify-between items-start mb-2">
-                             <span className="font-medium text-sm">Frontend Lead</span>
-                             <Badge variant="outline" className="text-[10px]">RBC</Badge>
-                           </div>
-                           <p className="text-xs text-muted-foreground">Applied 2 days ago</p>
-                         </Card>
+                    {["applied", "interviewing", "offer"].map((status) => (
+                      <div key={status} className="bg-secondary/30 p-4 rounded-lg min-h-[400px]">
+                        <h4 className="font-medium mb-4 flex items-center justify-between capitalize">
+                          <span>{status}</span>
+                          <Badge variant={status === "offer" ? "default" : "secondary"} className={status === "offer" ? "bg-green-500" : ""}>
+                            {apps.filter((a: any) => a.status === status).length}
+                          </Badge>
+                        </h4>
+                        <div className="space-y-3">
+                           {apps.filter((a: any) => a.status === status).map((app: any) => (
+                             <Card key={app.id} className="p-3 shadow-sm relative group">
+                               <div className="flex justify-between items-start mb-2">
+                                 <span className="font-medium text-sm">{app.position}</span>
+                                 <Badge variant="outline" className="text-[10px]">{app.company}</Badge>
+                               </div>
+                               <p className="text-xs text-muted-foreground">Updated {new Date(app.updatedAt).toLocaleDateString()}</p>
+                               <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                 <Button 
+                                   size="icon" 
+                                   variant="ghost" 
+                                   className="h-6 w-6 text-red-500"
+                                   onClick={() => deleteApplication.mutate(app.id)}
+                                 >
+                                   <Trash2 className="h-3 w-3" />
+                                 </Button>
+                               </div>
+                             </Card>
+                           ))}
+                        </div>
                       </div>
-                    </div>
-
-                    {/* Interview Column */}
-                    <div className="bg-secondary/30 p-4 rounded-lg min-h-[400px]">
-                      <h4 className="font-medium mb-4 flex items-center justify-between">
-                        <span>Interviewing</span>
-                        <Badge variant="default" className="bg-blue-500">1</Badge>
-                      </h4>
-                      <div className="space-y-3">
-                         <Card className="p-3 shadow-sm cursor-grab active:cursor-grabbing border-blue-200">
-                           <div className="flex justify-between items-start mb-2">
-                             <span className="font-medium text-sm">React Developer</span>
-                             <Badge variant="outline" className="text-[10px]">Telus</Badge>
-                           </div>
-                           <p className="text-xs text-muted-foreground">Interview tomorrow 2pm</p>
-                         </Card>
-                      </div>
-                    </div>
-
-                    {/* Offer Column */}
-                    <div className="bg-secondary/30 p-4 rounded-lg min-h-[400px]">
-                      <h4 className="font-medium mb-4 flex items-center justify-between">
-                        <span>Offer / Hired</span>
-                        <Badge variant="default" className="bg-green-500">0</Badge>
-                      </h4>
-                      <div className="flex items-center justify-center h-32 text-muted-foreground text-sm italic border-2 border-dashed rounded-lg">
-                        Drag success here!
-                      </div>
-                    </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>

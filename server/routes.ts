@@ -6,7 +6,7 @@ import { Strategy as LocalStrategy } from "passport-local";
 import session from "express-session";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { insertUserSchema, insertLeadSchema, insertOrderSchema, insertMessageSchema, insertDocumentSchema } from "@shared/schema";
+import { insertUserSchema, insertLeadSchema, insertOrderSchema, insertMessageSchema, insertDocumentSchema, insertApplicationSchema } from "@shared/schema";
 
 const SESSION_SECRET = process.env.SESSION_SECRET || "proresumes-secret-key-change-in-production";
 
@@ -415,6 +415,28 @@ app.use(
     }
   });
 
+  app.delete("/api/documents/:id", isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const user = req.user as any;
+      const doc = await storage.getDocument(id);
+      
+      if (!doc) {
+        return res.status(404).json({ message: "Document not found" });
+      }
+      
+      // Only the uploader or an admin can delete
+      if (user.role !== "admin" && doc.uploadedBy !== user.id) {
+        return res.status(403).json({ message: "Unauthorized to delete this document" });
+      }
+      
+      await storage.deleteDocument(id);
+      res.json({ message: "Document deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Error deleting document" });
+    }
+  });
+
   app.get("/api/admin/settings", isAdmin, async (req, res) => {
     try {
       const settings = await storage.getAdminSettings();
@@ -639,5 +661,58 @@ app.use(
       res.status(500).json({ message: "Error updating package pricing" });
     }
   });
+
+  // Application Tracker Routes
+  app.get("/api/applications", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const apps = await storage.getApplications(user.id);
+      res.json(apps);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching applications" });
+    }
+  });
+
+  app.post("/api/applications", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const data = insertApplicationSchema.parse({ ...req.body, userId: user.id });
+      const app = await storage.createApplication(data);
+      res.status(201).json(app);
+    } catch (error) {
+      res.status(500).json({ message: "Error creating application" });
+    }
+  });
+
+  app.patch("/api/applications/:id", isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const user = req.user as any;
+      const existing = await storage.getApplications(user.id);
+      if (!existing.find(a => a.id === id)) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+      const app = await storage.updateApplication(id, req.body);
+      res.json(app);
+    } catch (error) {
+      res.status(500).json({ message: "Error updating application" });
+    }
+  });
+
+  app.delete("/api/applications/:id", isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const user = req.user as any;
+      const existing = await storage.getApplications(user.id);
+      if (!existing.find(a => a.id === id)) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+      await storage.deleteApplication(id);
+      res.json({ message: "Application deleted" });
+    } catch (error) {
+      res.status(500).json({ message: "Error deleting application" });
+    }
+  });
+
   return httpServer;
 }

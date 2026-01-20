@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, type Lead, type Order, type Message, type Document, type AdminSettings, type User, type WidgetConfig } from "./api";
+import { api, type Lead, type Order, type Message, type Document, type AdminSettings, type User, type WidgetConfig, type Application } from "./api";
 
 export function useLeads() {
   return useQuery({
@@ -114,6 +114,16 @@ export function useCreateDocument() {
   });
 }
 
+export function useDeleteDocument() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.documents.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["documents"] });
+    },
+  });
+}
+
 export function useWriters() {
   return useQuery({
     queryKey: ["writers"],
@@ -211,6 +221,43 @@ export function useAdminMessages(orderId?: string) {
   return useQuery({
     queryKey: ["admin", "messages", orderId],
     queryFn: () => api.admin.getMessages(orderId),
+  });
+}
+
+export function useApplications() {
+  return useQuery({
+    queryKey: ["applications"],
+    queryFn: () => api.applications.getAll(),
+  });
+}
+
+export function useCreateApplication() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Partial<Application>) => api.applications.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+    },
+  });
+}
+
+export function useUpdateApplication() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<Application> }) => api.applications.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+    },
+  });
+}
+
+export function useDeleteApplication() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.applications.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+    },
   });
 }
 

@@ -218,6 +218,26 @@ export const insertWidgetLayoutSchema = createInsertSchema(widgetLayouts).omit({
 export type InsertWidgetLayout = z.infer<typeof insertWidgetLayoutSchema>;
 export type WidgetLayout = typeof widgetLayouts.$inferSelect;
 
+export const applications = pgTable("applications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  company: text("company").notNull(),
+  position: text("position").notNull(),
+  status: text("status").notNull().default('applied'), // applied, interviewing, offer, rejected
+  notes: text("notes"),
+  appliedAt: timestamp("applied_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertApplicationSchema = createInsertSchema(applications).omit({
+  id: true,
+  appliedAt: true,
+  updatedAt: true,
+});
+
+export type InsertApplication = z.infer<typeof insertApplicationSchema>;
+export type Application = typeof applications.$inferSelect;
+
 export const widgetConfigSchema = z.object({
   id: z.string(),
   type: z.enum(["stats", "chart", "activity", "shortcuts", "orders", "leads", "messages"]),

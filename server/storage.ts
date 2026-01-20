@@ -11,6 +11,7 @@ import {
   widgetLayouts,
   addons,
   orderAddons,
+  applications,
   type User,
   type InsertUser,
   type Lead,
@@ -29,6 +30,8 @@ import {
   type InsertAddon,
   type OrderAddon,
   type InsertOrderAddon,
+  type Application,
+  type InsertApplication,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -61,6 +64,7 @@ export interface IStorage {
   createDocument(document: InsertDocument): Promise<Document>;
   getDocuments(orderId: string): Promise<Document[]>;
   getDocument(id: string): Promise<Document | undefined>;
+  deleteDocument(id: string): Promise<void>;
   
   getAdminSettings(): Promise<AdminSettings | undefined>;
   updateAdminSettings(settings: Partial<InsertAdminSettings>): Promise<AdminSettings>;
@@ -76,6 +80,11 @@ export interface IStorage {
   getOrderAddons(orderId: string): Promise<OrderAddon[]>;
   createOrderAddon(orderAddon: InsertOrderAddon): Promise<OrderAddon>;
   updateOrderAddon(id: string, data: Partial<InsertOrderAddon>): Promise<OrderAddon | undefined>;
+  
+  getApplications(userId: string): Promise<Application[]>;
+  createApplication(application: InsertApplication): Promise<Application>;
+  updateApplication(id: string, data: Partial<InsertApplication>): Promise<Application | undefined>;
+  deleteApplication(id: string): Promise<void>;
 }
 
 const databaseUrl = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
@@ -206,6 +215,10 @@ export class PostgresStorage implements IStorage {
     const result = await db.select().from(documents).where(eq(documents.id, id)).limit(1);
     return result[0];
   }
+  
+  async deleteDocument(id: string): Promise<void> {
+    await db.delete(documents).where(eq(documents.id, id));
+  }
 
   async getAdminSettings(): Promise<AdminSettings | undefined> {
     const result = await db.select().from(adminSettings).limit(1);
@@ -287,6 +300,24 @@ export class PostgresStorage implements IStorage {
   async updateOrderAddon(id: string, data: Partial<InsertOrderAddon>): Promise<OrderAddon | undefined> {
     const result = await db.update(orderAddons).set(data).where(eq(orderAddons.id, id)).returning();
     return result[0];
+  }
+
+  async getApplications(userId: string): Promise<Application[]> {
+    return await db.select().from(applications).where(eq(applications.userId, userId)).orderBy(desc(applications.appliedAt));
+  }
+
+  async createApplication(insertApplication: InsertApplication): Promise<Application> {
+    const result = await db.insert(applications).values(insertApplication).returning();
+    return result[0];
+  }
+
+  async updateApplication(id: string, data: Partial<InsertApplication>): Promise<Application | undefined> {
+    const result = await db.update(applications).set({ ...data, updatedAt: new Date() }).where(eq(applications.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteApplication(id: string): Promise<void> {
+    await db.delete(applications).where(eq(applications.id, id));
   }
 }
 
