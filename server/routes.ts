@@ -13,23 +13,39 @@ const SESSION_SECRET = process.env.SESSION_SECRET || "proresumes-secret-key-chan
 passport.use(
   new LocalStrategy(async (username, password, done) => {
     try {
-      console.log("Login attempt for username:", username);
+      console.log("=== LOGIN ATTEMPT ===");
+      console.log("Username:", username);
+      console.log("Password length:", password?.length);
+      
       const user = await storage.getUserByUsername(username);
-      console.log("User found:", user ? "yes" : "no");
+      
       if (!user) {
+        console.log("RESULT: User not found in database");
         return done(null, false, { message: "Invalid username or password" });
       }
       
-      console.log("Comparing passwords...");
-      console.log("Input password:", password);
-      console.log("Stored hash:", user.password);
-      console.log("Hash length:", user.password.length);
+      console.log("User found:", user.username, "| Role:", user.role);
+      console.log("Stored hash starts with:", user.password?.substring(0, 10));
+      console.log("Hash length:", user.password?.length);
+      
+      // Check if the hash looks like a bcrypt hash
+      const isBcryptHash = user.password?.startsWith("$2");
+      console.log("Is bcrypt format:", isBcryptHash);
+      
+      if (!isBcryptHash) {
+        console.log("ERROR: Password is not in bcrypt format. Re-run seed script.");
+        return done(null, false, { message: "Invalid username or password" });
+      }
+      
       const isValid = await bcrypt.compare(password, user.password);
-      console.log("Password valid:", isValid);
+      console.log("Password comparison result:", isValid);
+      
       if (!isValid) {
+        console.log("RESULT: Password mismatch");
         return done(null, false, { message: "Invalid username or password" });
       }
       
+      console.log("RESULT: Login successful");
       return done(null, user);
     } catch (err) {
       console.error("Login error:", err);

@@ -2,9 +2,13 @@ import { storage } from "./storage";
 import bcrypt from "bcryptjs";
 
 async function seed() {
-  console.log("Seeding database...");
+  console.log("=== SEEDING DATABASE ===");
+  console.log("Generating bcrypt hash for 'password123'...");
 
   const hashedPassword = await bcrypt.hash("password123", 10);
+  console.log("Generated hash:", hashedPassword);
+  console.log("Hash starts with $2:", hashedPassword.startsWith("$2"));
+  console.log("Hash length:", hashedPassword.length);
 
   // 1. Create Admin
   let admin = await storage.getUserByUsername("admin");
