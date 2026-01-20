@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useLeads, useMessages, useCreateMessage } from "@/lib/hooks";
+import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,7 @@ interface ChatSession {
 }
 
 export function AdminLiveChat() {
+  const { user } = useAuth();
   const { data: leads = [] } = useLeads();
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const { data: messages = [] } = useMessages(selectedLeadId || undefined);
@@ -34,7 +36,7 @@ export function AdminLiveChat() {
 
     try {
       await createMessage.mutateAsync({
-        senderId: "admin", // In a real app, use the logged-in admin's ID
+        senderId: user?.id || "admin",
         content: replyText,
         type: "lead_chat",
         orderId: selectedLeadId

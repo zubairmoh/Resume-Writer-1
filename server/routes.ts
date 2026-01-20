@@ -329,14 +329,45 @@ app.use(
 
   app.post("/api/orders", isAuthenticated, async (req, res) => {
     try {
-      const data = insertOrderSchema.parse(req.body);
+      console.log("=== ORDER CREATION ===");
+      console.log("Request body:", JSON.stringify(req.body, null, 2));
+      
+      // Auto-assign a writer if not provided
+      let orderData = { ...req.body };
+      if (!orderData.writerId) {
+        const writers = await storage.getUsersByRole('writer');
+        if (writers.length > 0) {
+          // Simple round-robin: assign to writer with fewest orders
+          orderData.writerId = writers[0].id;
+          console.log("Auto-assigned writer:", writers[0].username);
+        }
+      }
+      
+      // Set default revisions based on package
+      if (!orderData.revisionsRemaining) {
+        const revisionMap: Record<string, number> = {
+          'Entry': 1,
+          'Basic': 1,
+          'Professional': 3,
+          'Executive': 999, // Unlimited
+        };
+        orderData.revisionsRemaining = revisionMap[orderData.packageType] || 3;
+      }
+      
+      const data = insertOrderSchema.parse(orderData);
+      console.log("Parsed data:", JSON.stringify(data, null, 2));
+      
       const order = await storage.createOrder(data);
+      console.log("Order created:", order.id);
+      
       res.status(201).json(order);
     } catch (error) {
+      console.error("Order creation error:", error);
       if (error instanceof z.ZodError) {
+        console.error("Validation errors:", JSON.stringify(error.errors, null, 2));
         return res.status(400).json({ message: "Validation error", errors: error.errors });
       }
-      res.status(500).json({ message: "Error creating order" });
+      res.status(500).json({ message: "Error creating order", error: String(error) });
     }
   });
 

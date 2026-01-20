@@ -169,7 +169,17 @@ export function DashboardPage() {
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !currentOrder || !authUser) return;
+    if (!file) return;
+    
+    if (!currentOrder) {
+      toast({ variant: "destructive", title: "No Order Found", description: "Please purchase a package first before uploading documents." });
+      return;
+    }
+    
+    if (!authUser) {
+      toast({ variant: "destructive", title: "Not Logged In", description: "Please log in to upload files." });
+      return;
+    }
 
     try {
       // Simulation of file upload to a URL
@@ -184,7 +194,7 @@ export function DashboardPage() {
       });
       toast({ title: "File Uploaded", description: `${file.name} has been shared with your writer.` });
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Upload Failed", description: error.message });
+      toast({ variant: "destructive", title: "Upload Failed", description: error.message || "Failed to upload file" });
     }
   };
 
