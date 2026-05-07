@@ -1,105 +1,41 @@
-import { Navbar } from "@/components/layout/Navbar";
-import { Hero } from "@/components/home/Hero";
-import { ATSScanner } from "@/components/home/ATSScanner";
-import { Pricing } from "@/components/home/Pricing";
-import { ResumeComparison } from "@/components/home/ResumeComparison";
-import { TemplateGallery } from "@/components/home/TemplateGallery";
-import { HowItWorks, WhyChooseUs, ContactSection } from "@/components/home/ContentSections";
-import { Card, CardContent } from "@/components/ui/card";
-import { Star } from "lucide-react";
-import { Link } from "react-router-dom";
-import { FOMOPopup } from "@/components/FOMOPopup";
-import { LiveChatWidget } from "@/components/LiveChatWidget";
+import React from 'react';
 
-function TrustSection() {
+const Landing = () => {
   return (
-    <section className="py-12 bg-secondary/20 border-y" id="testimonials">
-      <div className="container mx-auto px-4">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center items-center opacity-70 grayscale hover:grayscale-0 transition-all">
-          {/* Mock Logos - In real app use SVG/Images */}
-          <div className="font-bold text-xl font-display">Forbes</div>
-          <div className="font-bold text-xl font-display">FastCompany</div>
-          <div className="font-bold text-xl font-display">Business Insider</div>
-          <div className="font-bold text-xl font-display">CBC News</div>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-slate-900 to-black text-white">
+      {/* Hero */}
+      <section className="pt-24 pb-16 px-6 text-center">
+        <h1 className="text-6xl font-bold tracking-tight mb-6">
+          AI Resumes That <span className="text-indigo-400">Get You Hired</span>
+        </h1>
+        <p className="text-xl text-gray-300 max-w-2xl mx-auto mb-10">
+          Professional resumes in minutes. ATS optimized. Results guaranteed.
+        </p>
+        <div className="flex gap-4 justify-center">
+          <a href="/signup" className="bg-indigo-600 hover:bg-indigo-700 px-8 py-4 rounded-xl text-lg font-semibold">Get Started Free</a>
+          <a href="#demo" className="border border-white/30 hover:bg-white/10 px-8 py-4 rounded-xl text-lg font-semibold">Watch Demo</a>
         </div>
-        
-        <div className="mt-12 grid md:grid-cols-3 gap-6">
-          {[
-            { name: "Emily R.", role: "Marketing Director", text: "Landed 3 interviews in one week after the rewrite. Worth every penny." },
-            { name: "David K.", role: "Software Engineer", text: "The ATS scanner was an eye opener. The writer really understood the tech industry." },
-            { name: "Sarah M.", role: "Nurse Practitioner", text: "Professional, fast, and Canadian-specific advice. Highly recommend." }
-          ].map((review, i) => (
-            <Card key={i} className="border-none shadow-none bg-transparent">
-              <CardContent className="pt-6">
-                <div className="flex gap-1 mb-2 text-yellow-500">
-                  {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-current" />)}
-                </div>
-                <p className="text-muted-foreground italic mb-4">"{review.text}"</p>
-                <div>
-                  <p className="font-semibold text-sm">{review.name}</p>
-                  <p className="text-xs text-muted-foreground">{review.role}</p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+      </section>
+
+      {/* Trust Bar */}
+      <div className="bg-white/5 py-4">
+        <div className="max-w-5xl mx-auto flex justify-center gap-12 text-sm opacity-75">
+          <div>✓ Trusted by 10k+ professionals</div>
+          <div>✓ 98% Interview Rate Increase</div>
         </div>
       </div>
-    </section>
-  );
-}
 
-export function LandingPage() {
-  return (
-    <div className="min-h-screen bg-background text-foreground">
-      <FOMOPopup />
-      <LiveChatWidget />
-      <Navbar />
-      <main>
-        <Hero />
-        <TrustSection />
-        <WhyChooseUs />
-        <HowItWorks />
-        <ResumeComparison />
-        <TemplateGallery />
-        <ATSScanner />
-        <Pricing />
-        <ContactSection />
-      </main>
-      <footer className="bg-secondary py-16 border-t">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-4 gap-8 mb-12">
-            <div className="col-span-1 md:col-span-2">
-              <h3 className="text-xl font-bold font-display text-primary mb-4">ResumePro</h3>
-              <p className="text-sm text-muted-foreground max-w-xs">
-                Canada's leading resume writing service. We combine expert writers with ATS technology to help you land your dream job in Toronto, Vancouver, Montreal, and beyond.
-              </p>
-            </div>
-            <div>
-              <h4 className="font-bold mb-4">Legal</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link to="/privacy" className="hover:text-primary">Privacy Policy</Link></li>
-                <li><Link to="/terms" className="hover:text-primary">Terms & Conditions</Link></li>
-                <li><Link to="/cookie-policy" className="hover:text-primary">Cookie Policy</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-bold mb-4">Support</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#contact" className="hover:text-primary">Contact Us</a></li>
-                <li><a href="#" className="hover:text-primary">FAQ</a></li>
-                <li><Link to="/login" className="hover:text-primary">Client Login</Link></li>
-              </ul>
-            </div>
-          </div>
-          
-          <div className="pt-8 border-t flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-muted-foreground">
-            <p>© 2024 ProResumes.ca. All rights reserved.</p>
-            <div className="flex gap-4">
-              <span>Made with ❤️ in Canada</span>
-            </div>
-          </div>
+      {/* Features */}
+      <section className="py-20 px-6">
+        <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-8">
+          {/* Feature cards */}
+          <div className="bg-white/5 p-8 rounded-3xl">AI Writer</div>
+          <div className="bg-white/5 p-8 rounded-3xl">ATS Templates</div>
+          <div className="bg-white/5 p-8 rounded-3xl">Live Chat</div>
         </div>
-      </footer>
+      </section>
     </div>
   );
-}
+};
+
+export default Landing;
